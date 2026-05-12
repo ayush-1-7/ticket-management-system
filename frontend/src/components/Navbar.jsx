@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useTickets } from '../context/TicketContext'
+import { Clock, LayoutDashboard, PlusCircle, Ticket, Zap } from 'lucide-react'
 
 function LiveISTClock() {
   const [time, setTime] = useState('')
@@ -24,19 +25,9 @@ function LiveISTClock() {
   }, [])
 
   return (
-    <div style={{
-      fontSize: '12px',
-      fontWeight: 500,
-      color: '#a5b4fc',
-      background: 'rgba(165,180,252,0.08)',
-      padding: '5px 10px',
-      borderRadius: '8px',
-      border: '1px solid rgba(165,180,252,0.15)',
-      whiteSpace: 'nowrap',
-      minWidth: '135px',
-      textAlign: 'center',
-    }}>
-      {time} IST
+    <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.08] text-[12px] font-medium text-indigo-300/80 backdrop-blur-md">
+      <Clock className="w-3.5 h-3.5 text-indigo-400" />
+      <span className="tabular-nums">{time} IST</span>
     </div>
   )
 }
@@ -55,98 +46,82 @@ export default function Navbar() {
   const openCount = tickets.filter(t => t.status === 'Open').length
 
   return (
-    <nav style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      zIndex: 100,
-      background: scrolled ? 'var(--color-nav-bg)' : 'rgba(10, 12, 20, 0.8)',
-      backdropFilter: 'blur(20px) saturate(180%)',
-      borderBottom: '1px solid var(--color-border)',
-      transition: 'all var(--transition-base)',
-    }}>
-      <div style={{ 
-        maxWidth: '1280px', 
-        margin: '0 auto', 
-        padding: '0 20px', 
-        height: '72px', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'space-between',
-        gap: '20px' 
-      }}>
-
+    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+      scrolled 
+        ? 'bg-slate-950/80 backdrop-blur-xl border-b border-white/[0.08] py-3' 
+        : 'bg-transparent py-5'
+    }`}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
+        
         {/* Logo */}
-        <div onClick={() => navigate('/')} style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', flexShrink: 0 }}>
-          <div style={{ width: '40px', height: '40px', background: 'linear-gradient(135deg,#6366f1,#a855f7)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(99,102,241,0.3)' }}>
-            <span style={{ color: 'white', fontWeight: 800, fontSize: '22px' }}>T</span>
+        <div 
+          onClick={() => navigate('/')} 
+          className="flex items-center gap-3 cursor-pointer group flex-shrink-0"
+        >
+          <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20 group-hover:shadow-indigo-500/40 transition-all duration-300 group-hover:-rotate-6">
+            <Ticket className="w-6 h-6 text-white" />
           </div>
           <div className="hidden sm:block">
-            <div style={{ fontSize: '19px', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-main)' }}>TicketFlow</div>
-            <div style={{ fontSize: '9px', color: 'var(--text-dim)', marginTop: '-4px', fontWeight: 700 }}>MULTI-DOMAIN</div>
+            <h1 className="text-xl font-black tracking-tighter text-white group-hover:text-indigo-400 transition-colors">
+              Ticket<span className="text-indigo-500">Flow</span>
+            </h1>
+            <p className="text-[10px] font-bold text-slate-500 tracking-[0.2em] uppercase leading-none">
+              Systems Enterprise
+            </p>
           </div>
         </div>
 
-        {/* Center Navigation - Hidden on very small screens */}
-        <div style={{ 
-          display: 'flex', 
-          background: 'rgba(255,255,255,0.03)', 
-          border: '1px solid var(--border-glass)', 
-          borderRadius: '14px', 
-          padding: '4px',
-          margin: '0 auto'
-        }}>
-          <NavLink to="/" end style={({ isActive }) => ({
-            padding: '8px 20px',
-            borderRadius: '10px',
-            fontSize: '14px',
-            fontWeight: 600,
-            color: isActive ? '#818cf8' : 'var(--text-muted)',
-            background: isActive ? 'rgba(99,102,241,0.1)' : 'transparent',
-            transition: 'all 0.2s'
-          })}>Dashboard</NavLink>
-          <NavLink to="/create" style={({ isActive }) => ({
-            padding: '8px 20px',
-            borderRadius: '10px',
-            fontSize: '14px',
-            fontWeight: 600,
-            color: isActive ? '#818cf8' : 'var(--text-muted)',
-            background: isActive ? 'rgba(99,102,241,0.1)' : 'transparent',
-            transition: 'all 0.2s'
-          })}>Create Ticket</NavLink>
+        {/* Center Navigation */}
+        <div className="hidden md:flex items-center bg-white/[0.03] border border-white/[0.05] rounded-2xl p-1 backdrop-blur-md">
+          <NavLink 
+            to="/" 
+            end 
+            className={({ isActive }) => `
+              flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold transition-all duration-300
+              ${isActive 
+                ? 'bg-indigo-500/10 text-indigo-400 shadow-[inset_0_0_20px_rgba(99,102,241,0.05)]' 
+                : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'}
+            `}
+          >
+            <LayoutDashboard className="w-4 h-4" />
+            Dashboard
+          </NavLink>
+          <NavLink 
+            to="/create" 
+            className={({ isActive }) => `
+              flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold transition-all duration-300
+              ${isActive 
+                ? 'bg-indigo-500/10 text-indigo-400 shadow-[inset_0_0_20px_rgba(99,102,241,0.05)]' 
+                : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'}
+            `}
+          >
+            <PlusCircle className="w-4 h-4" />
+            Create
+          </NavLink>
         </div>
 
-        {/* Right Side - Optimized for no overlap */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
-          
+        {/* Right Side */}
+        <div className="flex items-center gap-4 flex-shrink-0">
           <div className="hidden lg:block">
             <LiveISTClock />
           </div>
 
+          <div className="h-6 w-[1px] bg-white/10 hidden sm:block" />
+
           {openCount > 0 && (
-            <div className="badge" style={{ background: 'rgba(124, 77, 255, 0.15)', color: '#a78bfa', border: '1px solid rgba(124, 77, 255, 0.2)' }}>
-              {openCount} Open
+            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[11px] font-bold animate-pulse">
+              <Zap className="w-3 h-3 fill-amber-500" />
+              {openCount} ACTIVE
             </div>
           )}
 
-
-
           <button
             onClick={() => navigate('/create')}
-            className="btn btn-primary"
-            style={{ 
-              padding: '10px 18px', 
-              fontSize: '14px', 
-              whiteSpace: 'nowrap',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}
+            className="btn-premium !px-4 sm:!px-6"
           >
-            <span style={{ fontSize: '18px', lineHeight: 1 }}>+</span>
-            <span className="hidden md:inline">New Ticket</span>
-            <span className="md:hidden">New</span>
+            <PlusCircle className="w-4 h-4" />
+            <span className="hidden sm:inline">New Ticket</span>
+            <span className="sm:hidden">New</span>
           </button>
         </div>
       </div>

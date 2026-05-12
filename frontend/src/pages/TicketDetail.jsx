@@ -1,672 +1,292 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { ticketAPI } from '../services/api'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useTickets } from '../context/TicketContext'
-import { PriorityBadge, StatusBadge, DomainBadge } from '../components/Badge'
 import { useToast } from '../components/Toast'
-import ConfirmDialog from '../components/ConfirmDialog'
-import ErrorMessage from '../components/ErrorMessage'
 
-const STATUSES = ['Open', 'In Progress', 'Closed']
+const STATUS_STEPS = ['Open', 'In Progress', 'Resolved', 'Closed']
+const DOMAINS = ['Engineering', 'DevOps', 'HR', 'IT', 'Finance']
 const PRIORITIES = ['Low', 'Medium', 'High', 'Critical']
 
-const STATUS_STEPS = ['Open', 'In Progress', 'Closed']
-const STATUS_COLORS = {
-  'Open': '#3b82f6',
-  'In Progress': '#8b5cf6',
-  'Closed': '#10b981',
-}
-const PRIORITY_COLORS = {
-  Low: '#10b981',
-  Medium: '#f59e0b',
-  High: '#f97316',
-  Critical: '#ef4444',
+const PRIORITY_THEMES = {
+  Low: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
+  Medium: 'text-amber-400 bg-amber-400/10 border-amber-400/20',
+  High: 'text-orange-400 bg-orange-400/10 border-orange-400/20',
+  Critical: 'text-red-400 bg-red-400/10 border-red-400/20'
 }
 
-function SkeletonDetail() {
-  return (
-    <div style={{ maxWidth: '760px', margin: '0 auto', animation: 'fadeIn 300ms' }}>
-      <div className="skeleton" style={{ height: '14px', width: '200px', marginBottom: '28px' }} />
-      <div className="card" style={{ padding: '28px', marginBottom: '16px' }}>
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-          {[80, 90, 80].map((w, i) => (
-            <div key={i} className="skeleton" style={{ width: `${w}px`, height: '22px', borderRadius: '20px' }} />
-          ))}
-        </div>
-        <div className="skeleton" style={{ height: '26px', width: '70%', marginBottom: '12px' }} />
-        <div className="skeleton" style={{ height: '14px', width: '40%', marginBottom: '20px' }} />
-        <div className="skeleton" style={{ height: '80px', borderRadius: '10px' }} />
-      </div>
-      <div className="card" style={{ padding: '28px', marginBottom: '16px' }}>
-        <div className="skeleton" style={{ height: '18px', width: '140px', marginBottom: '20px' }} />
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className="skeleton" style={{ height: '44px', borderRadius: '10px' }} />
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function StatusTimeline({ currentStatus }) {
-  const currentIdx = STATUS_STEPS.indexOf(currentStatus)
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '20px' }}>
-      {STATUS_STEPS.map((step, idx) => {
-        const done = idx <= currentIdx
-        const active = idx === currentIdx
-        const color = STATUS_COLORS[step]
-        return (
-          <React.Fragment key={step}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', flex: 1 }}>
-              <div style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '50%',
-                background: done ? color : 'var(--color-bg-tertiary)',
-                border: `2px solid ${done ? color : 'var(--color-border)'}`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all var(--transition-base)',
-                boxShadow: active ? `0 0 0 4px ${color}30` : 'none',
-              }}>
-                {done ? (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                ) : (
-                  <div style={{
-                    width: '8px',
-                    height: '8px',
-                    borderRadius: '50%',
-                    background: 'var(--color-border-strong)',
-                  }} />
-                )}
-              </div>
-              <span style={{
-                fontSize: '11px',
-                fontWeight: active ? 700 : 500,
-                color: done ? color : 'var(--color-text-tertiary)',
-                whiteSpace: 'nowrap',
-              }}>
-                {step}
-              </span>
-            </div>
-            {idx < STATUS_STEPS.length - 1 && (
-              <div style={{
-                flex: 2,
-                height: '2px',
-                marginBottom: '20px',
-                background: idx < currentIdx
-                  ? `linear-gradient(90deg,${STATUS_COLORS[STATUS_STEPS[idx]]},${STATUS_COLORS[STATUS_STEPS[idx + 1]]})`
-                  : 'var(--color-border)',
-                transition: 'background var(--transition-slow)',
-              }} />
-            )}
-          </React.Fragment>
-        )
-      })}
-    </div>
-  )
-}
-
-function TicketDetailInner() {
+export default function TicketDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { getTicket, updateTicket, deleteTicket, loading, error: contextError } = useTickets()
   const toast = useToast()
 
-  const { deleteTicket } = useTickets()
   const [ticket, setTicket] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [form, setForm] = useState({ domain: '', priority: '', status: '' })
   const [updating, setUpdating] = useState(false)
   const [deleting, setDeleting] = useState(false)
-  const [status, setStatus] = useState('')
-  const [priority, setPriority] = useState('')
-  const [dirty, setDirty] = useState(false)
-  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [localError, setLocalError] = useState(null)
 
   useEffect(() => {
-    let cancelled = false
-    setLoading(true)
-    setError(null)
-    ticketAPI.getById(id)
-      .then(res => {
-        if (!cancelled) {
-          setTicket(res.data)
-          setStatus(res.data.status)
-          setPriority(res.data.priority)
+    const fetchTicket = async () => {
+      try {
+        const data = await getTicket(id)
+        if (data) {
+          setTicket(data)
+          setForm({ domain: data.domain, priority: data.priority, status: data.status })
         }
-      })
-      .catch(err => {
-        if (!cancelled) setError(err.message)
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false)
-      })
-    return () => { cancelled = true }
-  }, [id])
-
-  useEffect(() => {
-    if (ticket) {
-      setDirty(status !== ticket.status || priority !== ticket.priority)
+      } catch (err) {
+        setLocalError('Ticket not found or access denied.')
+      }
     }
-  }, [status, priority, ticket])
+    fetchTicket()
+  }, [id, getTicket])
 
-  const handleUpdate = async () => {
-    if (!dirty || updating) return
+  const handleUpdate = async (e) => {
+    e.preventDefault()
     setUpdating(true)
+    setLocalError(null)
     try {
-      const res = await ticketAPI.update(id, { status, priority })
-      setTicket(res.data)
-      setDirty(false)
+      const updated = await updateTicket(id, form)
+      setTicket(updated)
       toast('Ticket updated successfully', 'success')
     } catch (err) {
-      toast(err.message || 'Update failed', 'error')
+      setLocalError(err.message)
     } finally {
       setUpdating(false)
     }
   }
 
-  const handleDeleteConfirm = async () => {
-    setDeleteOpen(false)
-    if (deleting) return
+  const handleDelete = async () => {
+    if (!window.confirm('Are you absolutely sure? This action cannot be undone.')) return
     setDeleting(true)
     try {
       await deleteTicket(id)
-      toast('Ticket deleted successfully', 'success')
+      toast('Ticket deleted permanently', 'success')
       navigate('/')
     } catch (err) {
-      toast(err.message || 'Delete failed', 'error')
+      setLocalError(err.message)
       setDeleting(false)
     }
   }
 
-  const handleDeleteCancel = () => setDeleteOpen(false)
+  if (loading && !ticket) return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+      <div className="w-12 h-12 border-4 border-white/5 border-t-indigo-500 rounded-full animate-spin" />
+      <p className="text-slate-500 font-medium animate-pulse">Retrieving ticket details...</p>
+    </div>
+  )
 
-  const formatIST = (dateStr) => {
-    if (!dateStr) return { full: '—', relative: '—' }
-    
-    // Robustly parse UTC from server (append Z if missing to avoid local time parsing)
-    let date = new Date(dateStr)
-    if (typeof dateStr === 'string' && !dateStr.includes('Z') && !dateStr.includes('+')) {
-      date = new Date(dateStr + 'Z')
-    }
+  if (localError || contextError) return (
+    <div className="max-w-2xl mx-auto py-20 px-4 text-center">
+      <div className="w-20 h-20 bg-red-500/10 border border-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+        <svg className="w-10 h-10 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+      </div>
+      <h2 className="text-2xl font-bold text-white mb-2">Something went wrong</h2>
+      <p className="text-slate-400 mb-8">{localError || contextError}</p>
+      <Link to="/" className="inline-flex items-center gap-2 bg-white/5 border border-white/10 px-6 py-3 rounded-xl text-white font-bold hover:bg-white/10 transition-all">
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        Back to Dashboard
+      </Link>
+    </div>
+  )
 
-    if (isNaN(date.getTime())) return { full: 'Invalid Date', relative: 'Invalid' }
-
-    const full = new Intl.DateTimeFormat('en-IN', {
-      timeZone: 'Asia/Kolkata',
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true,
-    }).format(date) + ' IST'
-
-    // Relative time calculation
-    const now = new Date()
-    const diffMs = Math.abs(now - date)
-    const diffMins = Math.floor(diffMs / 60000)
-    const diffHours = Math.floor(diffMins / 60)
-    const diffDays = Math.floor(diffHours / 24)
-    
-    let relative = ''
-    if (diffMins < 1) relative = 'Just now'
-    else if (diffMins < 60) relative = `${diffMins}m ago`
-    else if (diffHours < 24) relative = `${diffHours}h ago`
-    else relative = `${diffDays}d ago`
-
-    return { full, relative }
-  }
-
-  if (loading) return <SkeletonDetail />
-  if (error) return <ErrorMessage message={error} onRetry={() => navigate('/')} />
   if (!ticket) return null
 
-  const priorityColor = PRIORITY_COLORS[ticket.priority] || '#3b82f6'
+  const currentStepIndex = STATUS_STEPS.indexOf(ticket.status)
 
   return (
-    <div style={{ maxWidth: '760px', margin: '0 auto', animation: 'fadeIn 300ms ease-out' }}>
-
-      {/* Breadcrumb */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
-        <Link
-          to="/"
-          style={{
-            fontSize: '13px',
-            color: 'var(--color-text-tertiary)',
-            textDecoration: 'none',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            transition: 'color var(--transition-fast)',
-          }}
-          onMouseEnter={e => e.currentTarget.style.color = 'var(--color-brand)'}
-          onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-tertiary)'}
-        >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="m3 9 9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-            <polyline points="9,22 9,12 15,12 15,22" />
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+    >
+      {/* Header & Breadcrumbs */}
+      <nav className="flex items-center gap-3 mb-8 text-sm text-slate-500 font-medium">
+        <Link to="/" className="hover:text-indigo-400 transition-colors flex items-center gap-2 group">
+          <svg className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
           </svg>
           Dashboard
         </Link>
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-tertiary)" strokeWidth="2">
-          <polyline points="9 18 15 12 9 6" />
-        </svg>
-        <span style={{ fontSize: '13px', color: 'var(--color-text-primary)', fontWeight: 600 }}>
-          Ticket #{ticket.id}
-        </span>
-      </div>
+        <span className="text-slate-700">/</span>
+        <span className="text-slate-200">Ticket #{ticket.id.slice(0, 8)}</span>
+      </nav>
 
-      {/* Main Info Card */}
-      <div className="card" style={{ marginBottom: '16px', overflow: 'hidden' }}>
-        <div style={{ height: '4px', background: `linear-gradient(90deg,${priorityColor},${priorityColor}60)` }} />
-        <div style={{ padding: '28px' }}>
+      <div className="flex flex-col lg:flex-row gap-8">
+        {/* Main Content */}
+        <div className="flex-1 space-y-8">
+          <section className="bg-[#0A0A0B]/80 backdrop-blur-xl border border-white/[0.08] rounded-[2rem] p-8 sm:p-10 shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 blur-[100px] -mr-32 -mt-32" />
+            
+            <header className="relative space-y-4 mb-8">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${PRIORITY_THEMES[ticket.priority]}`}>
+                  {ticket.priority} Priority
+                </span>
+                <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/5 border border-white/10 text-slate-400">
+                  {ticket.domain}
+                </span>
+              </div>
+              <h1 className="text-3xl sm:text-4xl font-extrabold text-white leading-tight">
+                {ticket.title}
+              </h1>
+            </header>
 
-          {/* Badges */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' }}>
-            <DomainBadge domain={ticket.domain} />
-            <PriorityBadge priority={ticket.priority} />
-            <StatusBadge status={ticket.status} />
-          </div>
+            <div className="relative space-y-6">
+              <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
+                </svg>
+                Description
+              </h3>
+              <div className="text-slate-300 leading-relaxed whitespace-pre-wrap text-lg bg-white/[0.02] border border-white/[0.05] p-6 rounded-2xl">
+                {ticket.description}
+              </div>
+            </div>
 
-          {/* Title */}
-          <h1 style={{
-            fontSize: '22px',
-            fontWeight: 800,
-            color: 'var(--color-text-primary)',
-            letterSpacing: '-0.02em',
-            lineHeight: 1.3,
-            marginBottom: '24px',
-          }}>
-            {ticket.title}
-          </h1>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 mt-12 pt-8 border-t border-white/[0.05]">
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Created By</p>
+                <p className="text-sm font-bold text-slate-200">System User</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Created At</p>
+                <p className="text-sm font-bold text-slate-200">{new Date(ticket.created_at).toLocaleDateString()}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Ticket ID</p>
+                <p className="text-sm font-mono font-bold text-slate-400">#{ticket.id.slice(0, 8)}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Last Activity</p>
+                <p className="text-sm font-bold text-slate-200">Just now</p>
+              </div>
+            </div>
+          </section>
 
           {/* Status Timeline */}
-          <StatusTimeline currentStatus={ticket.status} />
-
-          {/* Description */}
-          <div style={{
-            background: 'var(--color-bg-tertiary)',
-            borderRadius: '12px',
-            padding: '18px',
-            marginBottom: '20px',
-            border: '1px solid var(--color-border)',
-          }}>
-            <p style={{
-              fontSize: '11px',
-              fontWeight: 700,
-              color: 'var(--color-text-tertiary)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.06em',
-              marginBottom: '10px',
-            }}>
-              Description
-            </p>
-            <p style={{
-              fontSize: '14px',
-              color: 'var(--color-text-secondary)',
-              lineHeight: 1.75,
-            }}>
-              {ticket.description}
-            </p>
-          </div>
-
-          {/* Meta Info Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-            {[
-              { label: 'Ticket ID', full: `#${ticket.id}`, relative: 'Ticket Unique Identifier' },
-              { label: 'Domain', full: ticket.domain, relative: 'Business Domain' },
-              { label: 'Created', ...formatIST(ticket.created_at) },
-              { label: 'Last Updated', ...(ticket.updated_at ? formatIST(ticket.updated_at) : { full: '—', relative: '—' }) },
-            ].map(({ label, full, relative }) => (
-              <div
-                key={label}
-                style={{
-                  background: 'var(--color-bg-tertiary)',
-                  borderRadius: '10px',
-                  padding: '12px 14px',
-                  border: '1px solid var(--color-border)',
-                }}
-              >
-                <p style={{
-                  fontSize: '10px',
-                  fontWeight: 700,
-                  color: 'var(--color-text-tertiary)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
-                  marginBottom: '5px',
-                }}>
-                  {label}
-                </p>
-                <p data-tooltip={relative} style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text-primary)', cursor: 'help' }}>
-                  {full}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Update Card */}
-      <div className="card" style={{ padding: '24px', marginBottom: '16px' }}>
-        <h2 style={{
-          fontSize: '15px',
-          fontWeight: 700,
-          color: 'var(--color-text-primary)',
-          marginBottom: '20px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-        }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-brand)" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-          </svg>
-          Update Ticket
-        </h2>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
-          {/* Status Selector */}
-          <div>
-            <label style={{
-              fontSize: '11px',
-              fontWeight: 700,
-              color: 'var(--color-text-tertiary)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.06em',
-              display: 'block',
-              marginBottom: '10px',
-            }}>
-              Status
-            </label>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              {STATUSES.map(s => {
-                const isSelected = status === s
-                const color = STATUS_COLORS[s]
-                return (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => setStatus(s)}
-                    style={{
-                      padding: '10px 14px',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      border: `1.5px solid ${isSelected ? color : 'var(--color-border)'}`,
-                      background: isSelected ? `${color}15` : 'var(--color-bg-secondary)',
-                      color: isSelected ? color : 'var(--color-text-secondary)',
-                      fontSize: '13px',
-                      fontWeight: 600,
-                      textAlign: 'left',
-                      transition: 'all var(--transition-fast)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                    }}
-                  >
-                    <div style={{
-                      width: '8px',
-                      height: '8px',
-                      borderRadius: '50%',
-                      background: isSelected ? color : 'var(--color-border-strong)',
-                      flexShrink: 0,
-                    }} />
-                    {s}
-                    {isSelected && (
-                      <svg style={{ marginLeft: 'auto' }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    )}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* Priority Selector */}
-          <div>
-            <label style={{
-              fontSize: '11px',
-              fontWeight: 700,
-              color: 'var(--color-text-tertiary)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.06em',
-              display: 'block',
-              marginBottom: '10px',
-            }}>
-              Priority
-            </label>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              {PRIORITIES.map(p => {
-                const isSelected = priority === p
-                const color = PRIORITY_COLORS[p]
-                return (
-                  <button
-                    key={p}
-                    type="button"
-                    onClick={() => setPriority(p)}
-                    style={{
-                      padding: '10px 14px',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      border: `1.5px solid ${isSelected ? color : 'var(--color-border)'}`,
-                      background: isSelected ? `${color}15` : 'var(--color-bg-secondary)',
-                      color: isSelected ? color : 'var(--color-text-secondary)',
-                      fontSize: '13px',
-                      fontWeight: 600,
-                      textAlign: 'left',
-                      transition: 'all var(--transition-fast)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                    }}
-                  >
-                    <div style={{
-                      width: '8px',
-                      height: '8px',
-                      borderRadius: '50%',
-                      background: isSelected ? color : 'var(--color-border-strong)',
-                      flexShrink: 0,
-                    }} />
-                    {p}
-                    {isSelected && (
-                      <svg style={{ marginLeft: 'auto' }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    )}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        </div>
-
-        {/* Save / Discard */}
-        <div style={{
-          display: 'flex',
-          gap: '10px',
-          alignItems: 'center',
-          paddingTop: '16px',
-          borderTop: '1px solid var(--color-border)',
-        }}>
-          <button
-            onClick={handleUpdate}
-            disabled={!dirty || updating}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '10px 20px',
-              fontSize: '13px',
-              fontWeight: 700,
-              borderRadius: '10px',
-              border: 'none',
-              background: dirty ? 'linear-gradient(135deg,#3b82f6,#2563eb)' : 'var(--color-bg-tertiary)',
-              color: dirty ? 'white' : 'var(--color-text-tertiary)',
-              cursor: dirty ? 'pointer' : 'not-allowed',
-              boxShadow: dirty ? '0 2px 8px rgba(59,130,246,0.35)' : 'none',
-              transition: 'all var(--transition-fast)',
-              opacity: !dirty ? 0.5 : 1,
-            }}
-            onMouseEnter={e => { if (dirty) { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 14px rgba(59,130,246,0.5)' } }}
-            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = dirty ? '0 2px 8px rgba(59,130,246,0.35)' : 'none' }}
-          >
-            {updating ? (
-              <>
-                <div style={{
-                  width: '14px',
-                  height: '14px',
-                  border: '2px solid rgba(255,255,255,0.3)',
-                  borderTopColor: 'white',
-                  borderRadius: '50%',
-                  animation: 'spin 0.8s linear infinite',
-                }} />
-                Saving...
-              </>
-            ) : (
-              <>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-                Save Changes
-              </>
-            )}
-          </button>
-
-          {dirty && (
-            <button
-              onClick={() => { setStatus(ticket.status); setPriority(ticket.priority) }}
-              style={{
-                padding: '10px 16px',
-                fontSize: '13px',
-                fontWeight: 600,
-                borderRadius: '10px',
-                border: '1px solid var(--color-border)',
-                background: 'transparent',
-                color: 'var(--color-text-secondary)',
-                cursor: 'pointer',
-                transition: 'all var(--transition-fast)',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-bg-hover)' }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
-            >
-              Discard
-            </button>
-          )}
-
-          {!dirty && (
-            <span style={{
-              fontSize: '12px',
-              color: 'var(--color-text-tertiary)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '5px',
-            }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          <section className="bg-[#0A0A0B]/80 backdrop-blur-xl border border-white/[0.08] rounded-[2rem] p-8 shadow-2xl">
+            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-10 flex items-center gap-2">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              No unsaved changes
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Danger Zone */}
-      <div className="card" style={{
-        padding: '24px',
-        borderColor: 'rgba(239,68,68,0.25)',
-        background: 'rgba(239,68,68,0.03)',
-      }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          justifyContent: 'space-between',
-          gap: '16px',
-          flexWrap: 'wrap',
-        }}>
-          <div>
-            <h3 style={{
-              fontSize: '14px',
-              fontWeight: 700,
-              color: '#dc2626',
-              marginBottom: '6px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-            }}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-              Danger Zone
+              Lifecycle Progress
             </h3>
-            <p style={{ fontSize: '13px', color: 'var(--color-text-tertiary)', lineHeight: 1.5 }}>
-              Permanently delete ticket #{ticket.id}. This action cannot be undone.
-            </p>
-          </div>
+            <div className="relative flex flex-col sm:flex-row justify-between items-start sm:items-center gap-8 sm:gap-4 px-4">
+              {/* Connector Line */}
+              <div className="absolute left-[19px] sm:left-0 top-0 sm:top-5 bottom-0 sm:bottom-auto w-[2px] sm:w-full h-full sm:h-[2px] bg-white/[0.05]" />
+              <div 
+                className="absolute left-[19px] sm:left-0 top-0 sm:top-5 h-0 sm:h-[2px] w-[2px] sm:w-0 bg-indigo-500 transition-all duration-1000 ease-out shadow-[0_0_15px_rgba(99,102,241,0.5)]" 
+                style={{ 
+                  width: window.innerWidth > 640 ? `${(currentStepIndex / (STATUS_STEPS.length - 1)) * 100}%` : '2px',
+                  height: window.innerWidth > 640 ? '2px' : `${(currentStepIndex / (STATUS_STEPS.length - 1)) * 100}%`
+                }}
+              />
 
-          <button
-            onClick={() => setDeleteOpen(true)}
-            disabled={deleting}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '10px 18px',
-              fontSize: '13px',
-              fontWeight: 700,
-              borderRadius: '10px',
-              border: '1px solid rgba(239,68,68,0.35)',
-              background: deleting ? 'rgba(239,68,68,0.05)' : 'rgba(239,68,68,0.1)',
-              color: '#ef4444',
-              cursor: deleting ? 'not-allowed' : 'pointer',
-              transition: 'all var(--transition-fast)',
-              flexShrink: 0,
-            }}
-            onMouseEnter={e => { if (!deleting) { e.currentTarget.style.background = 'rgba(239,68,68,0.2)'; e.currentTarget.style.borderColor = 'rgba(239,68,68,0.5)' } }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.1)'; e.currentTarget.style.borderColor = 'rgba(239,68,68,0.35)' }}
-          >
-            {deleting ? (
-              <>
-                <div style={{
-                  width: '13px',
-                  height: '13px',
-                  border: '2px solid rgba(239,68,68,0.3)',
-                  borderTopColor: '#ef4444',
-                  borderRadius: '50%',
-                  animation: 'spin 0.8s linear infinite',
-                }} />
-                Deleting...
-              </>
-            ) : (
-              <>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-                Delete Ticket
-              </>
-            )}
-          </button>
+              {STATUS_STEPS.map((step, idx) => {
+                const isCompleted = idx <= currentStepIndex
+                const isActive = idx === currentStepIndex
+                return (
+                  <div key={step} className="relative z-10 flex sm:flex-col items-center gap-4 sm:gap-3 group">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-500 border-2 ${
+                      isActive 
+                        ? 'bg-indigo-600 border-indigo-400 shadow-[0_0_20px_rgba(99,102,241,0.4)] scale-110' 
+                        : isCompleted 
+                          ? 'bg-indigo-900/50 border-indigo-500' 
+                          : 'bg-dark-800 border-white/10 group-hover:border-white/30'
+                    }`}>
+                      {isCompleted ? (
+                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                      ) : (
+                        <div className="w-2 h-2 rounded-full bg-slate-600 group-hover:bg-slate-400 transition-colors" />
+                      )}
+                    </div>
+                    <span className={`text-[11px] font-bold uppercase tracking-wider transition-colors duration-500 ${
+                      isActive ? 'text-indigo-400' : isCompleted ? 'text-slate-300' : 'text-slate-600'
+                    }`}>
+                      {step}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          </section>
         </div>
+
+        {/* Sidebar / Actions */}
+        <aside className="w-full lg:w-80 space-y-8">
+          <section className="bg-[#0A0A0B]/80 backdrop-blur-xl border border-white/[0.08] rounded-[2rem] p-8 shadow-2xl">
+            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6">Update Details</h3>
+            <form onSubmit={handleUpdate} className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Domain</label>
+                <select 
+                  value={form.domain}
+                  onChange={(e) => setForm({...form, domain: e.target.value})}
+                  className="w-full bg-white/[0.03] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-slate-200 focus:ring-2 focus:ring-indigo-500/30 focus:outline-none transition-all"
+                >
+                  {DOMAINS.map(d => <option key={d} value={d} className="bg-[#0A0A0B]">{d}</option>)}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Priority</label>
+                <select 
+                  value={form.priority}
+                  onChange={(e) => setForm({...form, priority: e.target.value})}
+                  className="w-full bg-white/[0.03] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-slate-200 focus:ring-2 focus:ring-indigo-500/30 focus:outline-none transition-all"
+                >
+                  {PRIORITIES.map(p => <option key={p} value={p} className="bg-[#0A0A0B]">{p}</option>)}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Status</label>
+                <select 
+                  value={form.status}
+                  onChange={(e) => setForm({...form, status: e.target.value})}
+                  className="w-full bg-white/[0.03] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-slate-200 focus:ring-2 focus:ring-indigo-500/30 focus:outline-none transition-all"
+                >
+                  {STATUS_STEPS.map(s => <option key={s} value={s} className="bg-[#0A0A0B]">{s}</option>)}
+                </select>
+              </div>
+
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                type="submit"
+                disabled={updating}
+                className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white py-4 rounded-xl text-sm font-bold shadow-xl hover:from-indigo-500 hover:to-violet-500 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+              >
+                {updating ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Save Changes'}
+              </motion.button>
+            </form>
+          </section>
+
+          <section className="bg-red-500/[0.02] backdrop-blur-xl border border-red-500/10 rounded-[2rem] p-8 shadow-2xl">
+            <h3 className="text-sm font-bold text-red-400 uppercase tracking-widest mb-4">Danger Zone</h3>
+            <p className="text-xs text-slate-500 mb-6 leading-relaxed">
+              Once deleted, a ticket cannot be recovered. All associated data will be purged.
+            </p>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleDelete}
+              disabled={deleting}
+              className="w-full bg-red-500/10 border border-red-500/20 text-red-400 py-3 rounded-xl text-sm font-bold hover:bg-red-500 hover:text-white transition-all flex items-center justify-center gap-2"
+            >
+              {deleting ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Delete Ticket'}
+            </motion.button>
+          </section>
+        </aside>
       </div>
-
-      {/* Confirm Delete Dialog */}
-      <ConfirmDialog
-        isOpen={deleteOpen}
-        title={`Delete Ticket #${ticket.id}?`}
-        message={`"${ticket.title}" will be permanently deleted. There is no way to recover it after deletion.`}
-        confirmLabel="Yes, Delete Permanently"
-        confirmStyle="danger"
-        onConfirm={handleDeleteConfirm}
-        onCancel={handleDeleteCancel}
-      />
-    </div>
+    </motion.div>
   )
-}
-
-export default function TicketDetail() {
-  return <TicketDetailInner />
 }

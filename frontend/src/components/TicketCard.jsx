@@ -1,11 +1,13 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PriorityBadge, StatusBadge, DomainBadge } from './Badge'
+import { Calendar, Trash2, ArrowUpRight, Hash } from 'lucide-react'
+import GlassCard from './ui/GlassCard'
+import { motion } from 'framer-motion'
 
 function formatIST(dateStr) {
   if (!dateStr) return { full: '—', relative: '—' }
   
-  // Robustly parse UTC from server (append Z if missing to avoid local time parsing)
   let date = new Date(dateStr)
   if (typeof dateStr === 'string' && !dateStr.includes('Z') && !dateStr.includes('+')) {
     date = new Date(dateStr + 'Z')
@@ -24,7 +26,6 @@ function formatIST(dateStr) {
   }).format(date) + ' IST'
 
   const relative = getRelativeTime(date)
-
   return { full, relative }
 }
 
@@ -43,93 +44,88 @@ function getRelativeTime(date) {
 
 export default function TicketCard({ ticket, onDelete, index = 0 }) {
   const navigate = useNavigate()
-  const [hovered, setHovered] = useState(false)
-  const accent = { Low: '#10b981', Medium: '#f59e0b', High: '#f97316', Critical: '#ef4444' }[ticket.priority] || '#6366f1'
+  const priorityColor = { 
+    Low: 'border-emerald-500/20', 
+    Medium: 'border-amber-500/20', 
+    High: 'border-rose-500/20', 
+    Critical: 'border-red-600/30' 
+  }[ticket.priority] || 'border-white/10'
+  
+  const accentGradient = { 
+    Low: 'from-emerald-500/20 to-transparent', 
+    Medium: 'from-amber-500/20 to-transparent', 
+    High: 'from-rose-500/20 to-transparent', 
+    Critical: 'from-red-600/20 to-transparent' 
+  }[ticket.priority] || 'from-indigo-500/20 to-transparent'
+
   const { full, relative } = formatIST(ticket.created_at)
 
   return (
-    <div className="card animate-slide-up" style={{
-      padding: '0', cursor: 'default',
-      animationDelay: `${index * 40}ms`,
-      transform: hovered ? 'translateY(-4px)' : 'translateY(0)',
-      boxShadow: hovered ? 'var(--shadow-card-hover)' : 'var(--shadow-card)',
-      borderColor: hovered ? accent + '40' : 'var(--color-border)',
-    }}
-    onMouseEnter={() => setHovered(true)}
-    onMouseLeave={() => setHovered(false)}
+    <GlassCard 
+      tilt 
+      initial={{ opacity: 0, scale: 0.95, y: 20 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      transition={{ 
+        duration: 0.5, 
+        delay: index * 0.05,
+        ease: [0.23, 1, 0.32, 1]
+      }}
+      className={`group overflow-hidden border-t-2 ${priorityColor} p-0`}
     >
-      <div style={{ height: '3px', background: `linear-gradient(90deg, ${accent}, ${accent}60)`, borderRadius: '12px 12px 0 0' }} />
+      {/* Accent Background Gradient */}
+      <div className={`absolute inset-0 bg-gradient-to-b ${accentGradient} opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none`} />
 
-      <div style={{ padding: '18px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-          <div style={{ display: 'flex', gap: '6px' }}>
-            <span style={{ fontSize: '10px', fontFamily: 'monospace', background: 'var(--color-bg-tertiary)', padding: '1px 6px', borderRadius: '4px' }}>
-              #{ticket.id}
-            </span>
+      <div className="p-5 relative z-10">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 bg-white/[0.05] px-2 py-0.5 rounded-md border border-white/[0.05]">
+              <Hash className="w-3 h-3 text-indigo-400" />
+              <span className="text-[10px] font-black text-slate-300 tracking-tighter">
+                {ticket.id}
+              </span>
+            </div>
             <DomainBadge domain={ticket.domain} />
           </div>
-          <span data-tooltip={full} style={{ fontSize: '11.5px', color: 'var(--color-text-tertiary)', cursor: 'help' }}>
+          <div className="flex items-center gap-1 text-[11px] font-bold text-slate-500 uppercase tracking-wider" title={full}>
+            <Calendar className="w-3 h-3" />
             {relative}
-          </span>
+          </div>
         </div>
 
-        <h3 style={{ fontSize: '15px', fontWeight: 700, marginBottom: '8px', color: hovered ? accent : 'var(--color-text-primary)' }}>
+        <h3 className="text-base font-black text-white group-hover:text-indigo-400 transition-colors mb-2 leading-tight tracking-tight">
           {ticket.title}
         </h3>
 
-        <p className="line-clamp-2" style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginBottom: '14px' }}>
+        <p className="line-clamp-2 text-xs text-slate-400 font-medium mb-5 leading-relaxed">
           {ticket.description}
         </p>
 
-        <div style={{ display: 'flex', gap: '6px', marginBottom: '16px' }}>
+        <div className="flex items-center gap-2 mb-6">
           <PriorityBadge priority={ticket.priority} />
           <StatusBadge status={ticket.status} />
         </div>
 
-        <div style={{ display: 'flex', gap: '8px', paddingTop: '12px', borderTop: '1px solid var(--color-border)' }}>
-          <button 
-            className="btn-highlight"
+        <div className="flex items-center gap-2 pt-4 border-t border-white/[0.05]">
+          <motion.button 
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => navigate(`/tickets/${ticket.id}`)} 
-            style={{ 
-              flex: 1, 
-              padding: '8px', 
-              fontSize: '12.5px', 
-              fontWeight: 600, 
-              borderRadius: '8px', 
-              background: hovered ? accent + '15' : 'var(--color-bg-tertiary)', 
-              border: `1.5px solid ${hovered ? accent : 'var(--color-border)'}`,
-              color: hovered ? accent : 'var(--color-text-primary)',
-              transition: 'all 0.2s ease',
-              cursor: 'pointer'
-            }}
+            className="flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-xl bg-white/[0.05] hover:bg-indigo-500 text-indigo-400 hover:text-white border border-indigo-500/30 hover:border-indigo-500 text-[12px] font-black uppercase tracking-[0.1em] transition-all duration-300"
           >
-            View Details →
-          </button>
-          <button 
-            className="btn-highlight"
+            Details
+            <ArrowUpRight className="w-3.5 h-3.5" />
+          </motion.button>
+          
+          <motion.button 
+            whileHover={{ scale: 1.1, rotate: 5 }}
+            whileTap={{ scale: 0.9 }}
             onClick={() => onDelete(ticket.id)} 
-            style={{ 
-              padding: '8px 12px', 
-              borderRadius: '8px', 
-              background: 'var(--color-bg-tertiary)', 
-              border: '1.5px solid #f8717160', 
-              color: '#f87171',
-              transition: 'all 0.2s ease',
-              cursor: 'pointer'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.border = '1.5px solid #f87171';
-              e.currentTarget.style.background = 'rgba(248, 113, 113, 0.1)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.border = '1.5px solid #f8717160';
-              e.currentTarget.style.background = 'var(--color-bg-tertiary)';
-            }}
+            className="p-2.5 rounded-xl bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-500 hover:text-white hover:border-rose-500 transition-all duration-300"
           >
-            🗑
-          </button>
+            <Trash2 className="w-4 h-4" />
+          </motion.button>
         </div>
       </div>
-    </div>
+    </GlassCard>
   )
 }

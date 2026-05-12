@@ -1,6 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { PriorityBadge, StatusBadge, DomainBadge } from './Badge';
+import { cn } from '../utils/cn';
 
 export default function TicketTable({ tickets, onDelete }) {
   const navigate = useNavigate();
@@ -9,88 +11,70 @@ export default function TicketTable({ tickets, onDelete }) {
     navigate(`/tickets/${id}`);
   };
 
-  const handleDelete = (id) => {
-    // Relying on Dashboard's ConfirmDialog for a consistent UX
-    onDelete(id);
-  };
-
   return (
-    <div className="card" style={{ overflowX: 'auto', padding: '0' }}>
-      <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '800px' }}>
-        <thead>
-          <tr style={{ borderBottom: '2px solid var(--color-border)' }}>
-            <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '12px', fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', borderRight: '1px solid var(--color-border)' }}>#</th>
-            <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '12px', fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', borderRight: '1px solid var(--color-border)' }}>Title</th>
-            <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '12px', fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', borderRight: '1px solid var(--color-border)' }}>Domain</th>
-            <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '12px', fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', borderRight: '1px solid var(--color-border)' }}>Priority</th>
-            <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '12px', fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', borderRight: '1px solid var(--color-border)' }}>Status</th>
-            <th style={{ padding: '14px 16px', textAlign: 'right', fontSize: '12px', fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', width: '140px' }}>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {tickets.map((ticket, index) => (
-            <tr
-              key={ticket.id}
-              style={{
-                borderBottom: '1px solid var(--color-border)',
-                background: index % 2 === 0 ? 'transparent' : 'var(--color-bg-tertiary)',
-                transition: 'background 0.2s',
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-bg-hover)'}
-              onMouseLeave={(e) => e.currentTarget.style.background = index % 2 === 0 ? 'transparent' : 'var(--color-bg-tertiary)'}
-            >
-              <td style={{ padding: '14px 16px', fontFamily: 'monospace', fontWeight: 600, color: 'var(--color-text-tertiary)', borderRight: '1px solid var(--color-border)' }}>
-                #{ticket.id}
-              </td>
-              <td style={{ padding: '14px 16px', fontWeight: 600, color: 'var(--color-text-primary)', maxWidth: '280px', borderRight: '1px solid var(--color-border)' }}>
-                <div className="line-clamp-1">{ticket.title}</div>
-              </td>
-              <td style={{ padding: '14px 16px', borderRight: '1px solid var(--color-border)' }}>
-                <DomainBadge domain={ticket.domain} />
-              </td>
-              <td style={{ padding: '14px 16px', borderRight: '1px solid var(--color-border)' }}>
-                <PriorityBadge priority={ticket.priority} />
-              </td>
-              <td style={{ padding: '14px 16px', borderRight: '1px solid var(--color-border)' }}>
-                <StatusBadge status={ticket.status} />
-              </td>
-              <td style={{ padding: '14px 16px', textAlign: 'right' }}>
-                <button
-                  onClick={() => handleView(ticket.id)}
-                  style={{
-                    padding: '6px 14px',
-                    marginRight: '8px',
-                    fontSize: '12px',
-                    fontWeight: 600,
-                    borderRadius: '6px',
-                    background: 'var(--color-bg-tertiary)',
-                    border: '1px solid var(--color-border)',
-                    color: 'var(--color-text-secondary)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  View
-                </button>
-                <button
-                  onClick={() => handleDelete(ticket.id)}
-                  style={{
-                    padding: '6px 12px',
-                    fontSize: '12px',
-                    fontWeight: 600,
-                    borderRadius: '6px',
-                    background: 'rgba(239, 68, 68, 0.1)',
-                    border: '1px solid rgba(239, 68, 68, 0.4)',
-                    color: '#f87171',
-                    cursor: 'pointer',
-                  }}
-                >
-                  Delete
-                </button>
-              </td>
+    <div className="premium-card overflow-hidden !p-0">
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse min-w-[800px]">
+          <thead>
+            <tr className="border-b border-white/[0.08] bg-white/[0.02]">
+              <th className="px-6 py-4 text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider border-r border-white/[0.04]">#</th>
+              <th className="px-6 py-4 text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider border-r border-white/[0.04]">Title</th>
+              <th className="px-6 py-4 text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider border-r border-white/[0.04]">Domain</th>
+              <th className="px-6 py-4 text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider border-r border-white/[0.04]">Priority</th>
+              <th className="px-6 py-4 text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider border-r border-white/[0.04]">Status</th>
+              <th className="px-6 py-4 text-right text-[11px] font-bold text-slate-500 uppercase tracking-wider w-[180px]">Actions</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="divide-y divide-white/[0.04]">
+            {tickets.map((ticket, index) => (
+              <motion.tr
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: index * 0.05 }}
+                key={ticket.id}
+                className="group hover:bg-white/[0.04] transition-colors duration-200"
+              >
+                <td className="px-6 py-4 font-mono text-sm font-semibold text-slate-400 border-r border-white/[0.04]">
+                  #{ticket.id}
+                </td>
+                <td className="px-6 py-4 border-r border-white/[0.04]">
+                  <div className="max-w-[300px]">
+                    <div className="text-sm font-bold text-slate-200 group-hover:text-white transition-colors line-clamp-1">
+                      {ticket.title}
+                    </div>
+                  </div>
+                </td>
+                <td className="px-6 py-4 border-r border-white/[0.04]">
+                  <DomainBadge domain={ticket.domain} />
+                </td>
+                <td className="px-6 py-4 border-r border-white/[0.04]">
+                  <PriorityBadge priority={ticket.priority} />
+                </td>
+                <td className="px-6 py-4 border-r border-white/[0.04]">
+                  <StatusBadge status={ticket.status} />
+                </td>
+                <td className="px-6 py-4 text-right">
+                  <div className="flex items-center justify-end gap-2">
+                    <button
+                      onClick={() => handleView(ticket.id)}
+                      className="px-3 py-1.5 text-[11px] font-bold rounded-lg border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white transition-all"
+                    >
+                      View
+                    </button>
+                    <button
+                      onClick={() => onDelete(ticket.id)}
+                      className="px-3 py-1.5 text-[11px] font-bold rounded-lg border border-red-500/20 bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-all"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </td>
+              </motion.tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
+
