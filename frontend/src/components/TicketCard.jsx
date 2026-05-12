@@ -49,7 +49,7 @@ export default function TicketCard({ ticket, onDelete, index = 0 }) {
 
   return (
     <div className="card animate-slide-up" style={{
-      padding: '0', overflow: 'hidden', cursor: 'default',
+      padding: '0', cursor: 'default',
       animationDelay: `${index * 40}ms`,
       transform: hovered ? 'translateY(-4px)' : 'translateY(0)',
       boxShadow: hovered ? 'var(--shadow-card-hover)' : 'var(--shadow-card)',
@@ -58,7 +58,7 @@ export default function TicketCard({ ticket, onDelete, index = 0 }) {
     onMouseEnter={() => setHovered(true)}
     onMouseLeave={() => setHovered(false)}
     >
-      <div style={{ height: '3px', background: `linear-gradient(90deg, ${accent}, ${accent}60)` }} />
+      <div style={{ height: '3px', background: `linear-gradient(90deg, ${accent}, ${accent}60)`, borderRadius: '12px 12px 0 0' }} />
 
       <div style={{ padding: '18px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
@@ -68,8 +68,8 @@ export default function TicketCard({ ticket, onDelete, index = 0 }) {
             </span>
             <DomainBadge domain={ticket.domain} />
           </div>
-          <span data-tooltip={relative} style={{ fontSize: '11.5px', color: 'var(--color-text-tertiary)', cursor: 'help' }}>
-            {full}
+          <span data-tooltip={full} style={{ fontSize: '11.5px', color: 'var(--color-text-tertiary)', cursor: 'help' }}>
+            {relative}
           </span>
         </div>
 
