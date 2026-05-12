@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
-import { useTheme } from '../context/ThemeContext'
 import { useTickets } from '../context/TicketContext'
 
 function LiveISTClock() {
@@ -44,7 +43,6 @@ function LiveISTClock() {
 
 export default function Navbar() {
   const navigate = useNavigate()
-  const { theme, toggleTheme } = useTheme()
   const { tickets } = useTickets()
   const [scrolled, setScrolled] = useState(false)
 
@@ -132,26 +130,7 @@ export default function Navbar() {
             </div>
           )}
 
-          <button
-            onClick={toggleTheme}
-            style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '12px',
-              background: 'rgba(255,255,255,0.03)',
-              border: '1px solid var(--border-glass)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '18px',
-              cursor: 'pointer',
-              transition: 'all 0.2s'
-            }}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
-            onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
-          >
-            {theme === 'light' ? '🌙' : '☀️'}
-          </button>
+
 
           <button
             onClick={() => navigate('/create')}
