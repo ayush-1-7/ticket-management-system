@@ -2,41 +2,27 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PriorityBadge, StatusBadge, DomainBadge } from './Badge'
 
-const PRIORITY_ACCENTS = {
-  Low: '#10b981', Medium: '#f59e0b', High: '#f97316', Critical: '#ef4444'
-}
-
 function formatIST(dateStr) {
-  if (!dateStr) return { fullTime: '—', relative: '' }
+  const date = new Date(dateStr)
   
-  // Robustly parse UTC from server (append Z if missing to avoid local time parsing)
-  let date = new Date(dateStr)
-  if (typeof dateStr === 'string' && !dateStr.includes('Z') && !dateStr.includes('+')) {
-    date = new Date(dateStr + 'Z')
-  }
-
-  // Fallback check
-  if (isNaN(date.getTime())) return { fullTime: 'Invalid Date', relative: '' }
-
-  const formatter = new Intl.DateTimeFormat('en-IN', {
+  const full = new Intl.DateTimeFormat('en-IN', {
     timeZone: 'Asia/Kolkata',
-    day: '2-digit',
+    day: 'numeric',
     month: 'short',
     year: 'numeric',
-    hour: '2-digit',
+    hour: 'numeric',
     minute: '2-digit',
     hour12: true,
-  })
-  
-  const fullTime = formatter.format(date) + ' IST'
+  }).format(date) + ' IST'
+
   const relative = getRelativeTime(date)
-  
-  return { fullTime, relative }
+
+  return { full, relative }
 }
 
 function getRelativeTime(date) {
   const now = new Date()
-  const diffMs = now - date
+  const diffMs = Math.abs(now - date)
   const diffMins = Math.floor(diffMs / 60000)
   const diffHours = Math.floor(diffMins / 60)
   const diffDays = Math.floor(diffHours / 24)
@@ -50,8 +36,8 @@ function getRelativeTime(date) {
 export default function TicketCard({ ticket, onDelete, index = 0 }) {
   const navigate = useNavigate()
   const [hovered, setHovered] = useState(false)
-  const accent = PRIORITY_ACCENTS[ticket.priority] || '#3b82f6'
-  const { fullTime, relative } = formatIST(ticket.created_at)
+  const accent = { Low: '#10b981', Medium: '#f59e0b', High: '#f97316', Critical: '#ef4444' }[ticket.priority] || '#6366f1'
+  const { full, relative } = formatIST(ticket.created_at)
 
   return (
     <div className="card animate-slide-up" style={{
@@ -74,11 +60,8 @@ export default function TicketCard({ ticket, onDelete, index = 0 }) {
             </span>
             <DomainBadge domain={ticket.domain} />
           </div>
-          <span 
-            data-tooltip={relative}
-            style={{ fontSize: '11px', color: 'var(--color-text-tertiary)', cursor: 'help' }}
-          >
-            {fullTime}
+          <span data-tooltip={full} style={{ fontSize: '11.5px', color: 'var(--color-text-tertiary)', cursor: 'help' }}>
+            {relative}
           </span>
         </div>
 
@@ -96,10 +79,10 @@ export default function TicketCard({ ticket, onDelete, index = 0 }) {
         </div>
 
         <div style={{ display: 'flex', gap: '8px', paddingTop: '12px', borderTop: '1px solid var(--color-border)' }}>
-          <button onClick={() => navigate(`/tickets/${ticket.id}`)} className="btn" style={{ flex: 1, fontSize: '12.5px' }}>
+          <button onClick={() => navigate(`/tickets/${ticket.id}`)} style={{ flex: 1, padding: '8px', fontSize: '12.5px', fontWeight: 600, borderRadius: '8px', background: 'var(--color-bg-tertiary)', border: '1px solid var(--color-border)' }}>
             View Details →
           </button>
-          <button onClick={() => onDelete(ticket.id)} className="btn btn-ghost" title="Delete ticket">
+          <button onClick={() => onDelete(ticket.id)} style={{ padding: '8px 12px', borderRadius: '8px', background: 'var(--color-bg-tertiary)', border: '1px solid var(--color-border)', color: '#f87171' }}>
             🗑
           </button>
         </div>
