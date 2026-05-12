@@ -16,7 +16,7 @@ export default function App() {
         <BrowserRouter>
           <div className="min-h-screen bg-dark-900">
             <Navbar />
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-[104px] pb-8">
               <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/create" element={<CreateTicket />} />

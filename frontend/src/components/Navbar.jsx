@@ -63,91 +63,111 @@ export default function Navbar() {
       left: 0,
       right: 0,
       zIndex: 100,
-      background: scrolled ? 'var(--color-nav-bg)' : 'transparent',
-      backdropFilter: scrolled ? 'blur(20px) saturate(180%)' : 'none',
-      borderBottom: scrolled ? '1px solid var(--color-nav-border)' : 'none',
+      background: scrolled ? 'var(--color-nav-bg)' : 'rgba(10, 12, 20, 0.8)',
+      backdropFilter: 'blur(20px) saturate(180%)',
+      borderBottom: '1px solid var(--color-border)',
       transition: 'all var(--transition-base)',
     }}>
-      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 20px', height: '68px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ 
+        maxWidth: '1280px', 
+        margin: '0 auto', 
+        padding: '0 20px', 
+        height: '72px', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'space-between',
+        gap: '20px' 
+      }}>
 
         {/* Logo */}
-        <div onClick={() => navigate('/')} style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
-          <div style={{ width: '38px', height: '38px', background: 'linear-gradient(135deg,#6366f1,#a855f7)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ color: 'white', fontWeight: 800, fontSize: '21px' }}>T</span>
+        <div onClick={() => navigate('/')} style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', flexShrink: 0 }}>
+          <div style={{ width: '40px', height: '40px', background: 'linear-gradient(135deg,#6366f1,#a855f7)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(99,102,241,0.3)' }}>
+            <span style={{ color: 'white', fontWeight: 800, fontSize: '22px' }}>T</span>
           </div>
-          <div>
-            <div style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '-0.02em' }}>TicketFlow</div>
-            <div style={{ fontSize: '9px', color: '#64748b', marginTop: '-4px' }}>MULTI-DOMAIN</div>
+          <div className="hidden sm:block">
+            <div style={{ fontSize: '19px', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-main)' }}>TicketFlow</div>
+            <div style={{ fontSize: '9px', color: 'var(--text-dim)', marginTop: '-4px', fontWeight: 700 }}>MULTI-DOMAIN</div>
           </div>
         </div>
 
-        {/* Center Navigation */}
-        <div style={{ display: 'flex', background: 'var(--color-bg-tertiary)', border: '1px solid var(--color-border)', borderRadius: '12px', padding: '4px' }}>
+        {/* Center Navigation - Hidden on very small screens */}
+        <div style={{ 
+          display: 'flex', 
+          background: 'rgba(255,255,255,0.03)', 
+          border: '1px solid var(--border-glass)', 
+          borderRadius: '14px', 
+          padding: '4px',
+          margin: '0 auto'
+        }}>
           <NavLink to="/" end style={({ isActive }) => ({
-            padding: '8px 18px',
-            borderRadius: '8px',
-            fontSize: '13.5px',
+            padding: '8px 20px',
+            borderRadius: '10px',
+            fontSize: '14px',
             fontWeight: 600,
-            color: isActive ? '#6366f1' : 'var(--color-text-secondary)',
-            background: isActive ? 'var(--color-bg-card)' : 'transparent',
+            color: isActive ? '#818cf8' : 'var(--text-muted)',
+            background: isActive ? 'rgba(99,102,241,0.1)' : 'transparent',
+            transition: 'all 0.2s'
           })}>Dashboard</NavLink>
           <NavLink to="/create" style={({ isActive }) => ({
-            padding: '8px 18px',
-            borderRadius: '8px',
-            fontSize: '13.5px',
+            padding: '8px 20px',
+            borderRadius: '10px',
+            fontSize: '14px',
             fontWeight: 600,
-            color: isActive ? '#6366f1' : 'var(--color-text-secondary)',
-            background: isActive ? 'var(--color-bg-card)' : 'transparent',
+            color: isActive ? '#818cf8' : 'var(--text-muted)',
+            background: isActive ? 'rgba(99,102,241,0.1)' : 'transparent',
+            transition: 'all 0.2s'
           })}>Create Ticket</NavLink>
         </div>
 
-        {/* Right Side - Compact Layout */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'nowrap' }}>
+        {/* Right Side - Optimized for no overlap */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
           
-          {/* Live IST Clock */}
-          <LiveISTClock />
+          <div className="hidden lg:block">
+            <LiveISTClock />
+          </div>
 
-          {/* Open Count */}
           {openCount > 0 && (
-            <div style={{
-              background: '#312e81',
-              color: '#c4d0ff',
-              fontSize: '12px',
-              fontWeight: 700,
-              padding: '4px 10px',
-              borderRadius: '9999px',
-              whiteSpace: 'nowrap',
-            }}>
+            <div className="badge" style={{ background: 'rgba(124, 77, 255, 0.15)', color: '#a78bfa', border: '1px solid rgba(124, 77, 255, 0.2)' }}>
               {openCount} Open
             </div>
           )}
 
-          {/* Theme Toggle */}
           <button
             onClick={toggleTheme}
             style={{
-              width: '38px',
-              height: '38px',
-              borderRadius: '10px',
-              background: 'var(--color-bg-tertiary)',
-              border: '1px solid var(--color-border)',
+              width: '40px',
+              height: '40px',
+              borderRadius: '12px',
+              background: 'rgba(255,255,255,0.03)',
+              border: '1px solid var(--border-glass)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               fontSize: '18px',
-              flexShrink: 0,
+              cursor: 'pointer',
+              transition: 'all 0.2s'
             }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
           >
             {theme === 'light' ? '🌙' : '☀️'}
           </button>
 
-          {/* New Ticket Button */}
           <button
             onClick={() => navigate('/create')}
             className="btn btn-primary"
-            style={{ padding: '9px 18px', fontSize: '13.5px', whiteSpace: 'nowrap' }}
+            style={{ 
+              padding: '10px 18px', 
+              fontSize: '14px', 
+              whiteSpace: 'nowrap',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
           >
-            + New Ticket
+            <span style={{ fontSize: '18px', lineHeight: 1 }}>+</span>
+            <span className="hidden md:inline">New Ticket</span>
+            <span className="md:hidden">New</span>
           </button>
         </div>
       </div>
