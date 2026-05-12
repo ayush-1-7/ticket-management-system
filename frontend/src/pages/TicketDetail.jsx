@@ -187,17 +187,40 @@ function TicketDetailInner() {
   const handleDeleteCancel = () => setDeleteOpen(false)
 
   const formatIST = (dateStr) => {
-    if (!dateStr) return '—'
-    const date = new Date(dateStr.endsWith('Z') ? dateStr : dateStr + 'Z')
-    return new Intl.DateTimeFormat('en-IN', {
+    if (!dateStr) return { full: '—', relative: '—' }
+    
+    // Robustly parse UTC from server (append Z if missing to avoid local time parsing)
+    let date = new Date(dateStr)
+    if (typeof dateStr === 'string' && !dateStr.includes('Z') && !dateStr.includes('+')) {
+      date = new Date(dateStr + 'Z')
+    }
+
+    if (isNaN(date.getTime())) return { full: 'Invalid Date', relative: 'Invalid' }
+
+    const full = new Intl.DateTimeFormat('en-IN', {
       timeZone: 'Asia/Kolkata',
       day: 'numeric',
-      month: 'long',
+      month: 'short',
       year: 'numeric',
-      hour: 'numeric',
+      hour: '2-digit',
       minute: '2-digit',
       hour12: true,
     }).format(date) + ' IST'
+
+    // Relative time calculation
+    const now = new Date()
+    const diffMs = Math.abs(now - date)
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMins / 60)
+    const diffDays = Math.floor(diffHours / 24)
+    
+    let relative = ''
+    if (diffMins < 1) relative = 'Just now'
+    else if (diffMins < 60) relative = `${diffMins}m ago`
+    else if (diffHours < 24) relative = `${diffHours}h ago`
+    else relative = `${diffDays}d ago`
+
+    return { full, relative }
   }
 
   if (loading) return <SkeletonDetail />
@@ -296,11 +319,11 @@ function TicketDetailInner() {
           {/* Meta Info Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
             {[
-              { label: 'Ticket ID', value: `#${ticket.id}` },
-              { label: 'Domain', value: ticket.domain },
-              { label: 'Created', value: formatIST(ticket.created_at) },
-              { label: 'Last Updated', value: ticket.updated_at ? formatIST(ticket.updated_at) : '—' },
-            ].map(({ label, value }) => (
+              { label: 'Ticket ID', full: `#${ticket.id}`, relative: 'Ticket Unique Identifier' },
+              { label: 'Domain', full: ticket.domain, relative: 'Business Domain' },
+              { label: 'Created', ...formatIST(ticket.created_at) },
+              { label: 'Last Updated', ...(ticket.updated_at ? formatIST(ticket.updated_at) : { full: '—', relative: '—' }) },
+            ].map(({ label, full, relative }) => (
               <div
                 key={label}
                 style={{
@@ -320,8 +343,8 @@ function TicketDetailInner() {
                 }}>
                   {label}
                 </p>
-                <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
-                  {value}
+                <p data-tooltip={relative} style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text-primary)', cursor: 'help' }}>
+                  {full}
                 </p>
               </div>
             ))}

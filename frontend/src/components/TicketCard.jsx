@@ -2,18 +2,17 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PriorityBadge, StatusBadge, DomainBadge } from './Badge'
 
-function parseUTC(dateStr) {
-  if (!dateStr) return new Date()
-  let str = dateStr.toString()
-  if (!str.endsWith('Z') && !str.includes('+') && !str.includes('-')) {
-    str += 'Z'   // Force UTC if no timezone is present
-  }
-  return new Date(str)
-}
-
 function formatIST(dateStr) {
-  const date = parseUTC(dateStr)
+  if (!dateStr) return { full: '—', relative: '—' }
   
+  // Robustly parse UTC from server (append Z if missing to avoid local time parsing)
+  let date = new Date(dateStr)
+  if (typeof dateStr === 'string' && !dateStr.includes('Z') && !dateStr.includes('+')) {
+    date = new Date(dateStr + 'Z')
+  }
+
+  if (isNaN(date.getTime())) return { full: 'Invalid Date', relative: 'Invalid' }
+
   const full = new Intl.DateTimeFormat('en-IN', {
     timeZone: 'Asia/Kolkata',
     day: 'numeric',
@@ -69,8 +68,8 @@ export default function TicketCard({ ticket, onDelete, index = 0 }) {
             </span>
             <DomainBadge domain={ticket.domain} />
           </div>
-          <span data-tooltip={full} style={{ fontSize: '11.5px', color: 'var(--color-text-tertiary)', cursor: 'help' }}>
-            {relative}
+          <span data-tooltip={relative} style={{ fontSize: '11.5px', color: 'var(--color-text-tertiary)', cursor: 'help' }}>
+            {full}
           </span>
         </div>
 
