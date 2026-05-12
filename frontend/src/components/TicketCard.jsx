@@ -87,10 +87,45 @@ export default function TicketCard({ ticket, onDelete, index = 0 }) {
         </div>
 
         <div style={{ display: 'flex', gap: '8px', paddingTop: '12px', borderTop: '1px solid var(--color-border)' }}>
-          <button onClick={() => navigate(`/tickets/${ticket.id}`)} style={{ flex: 1, padding: '8px', fontSize: '12.5px', fontWeight: 600, borderRadius: '8px', background: 'var(--color-bg-tertiary)', border: '1px solid var(--color-border)' }}>
+          <button 
+            className="btn-highlight"
+            onClick={() => navigate(`/tickets/${ticket.id}`)} 
+            style={{ 
+              flex: 1, 
+              padding: '8px', 
+              fontSize: '12.5px', 
+              fontWeight: 600, 
+              borderRadius: '8px', 
+              background: hovered ? accent + '15' : 'var(--color-bg-tertiary)', 
+              border: `1.5px solid ${hovered ? accent : 'var(--color-border)'}`,
+              color: hovered ? accent : 'var(--color-text-primary)',
+              transition: 'all 0.2s ease',
+              cursor: 'pointer'
+            }}
+          >
             View Details →
           </button>
-          <button onClick={() => onDelete(ticket.id)} style={{ padding: '8px 12px', borderRadius: '8px', background: 'var(--color-bg-tertiary)', border: '1px solid var(--color-border)', color: '#f87171' }}>
+          <button 
+            className="btn-highlight"
+            onClick={() => onDelete(ticket.id)} 
+            style={{ 
+              padding: '8px 12px', 
+              borderRadius: '8px', 
+              background: 'var(--color-bg-tertiary)', 
+              border: '1.5px solid #f8717160', 
+              color: '#f87171',
+              transition: 'all 0.2s ease',
+              cursor: 'pointer'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.border = '1.5px solid #f87171';
+              e.currentTarget.style.background = 'rgba(248, 113, 113, 0.1)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.border = '1.5px solid #f8717160';
+              e.currentTarget.style.background = 'var(--color-bg-tertiary)';
+            }}
+          >
             🗑
           </button>
         </div>

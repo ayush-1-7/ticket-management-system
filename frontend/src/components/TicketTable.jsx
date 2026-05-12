@@ -19,11 +19,11 @@ export default function TicketTable({ tickets, onDelete }) {
       <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '800px' }}>
         <thead>
           <tr style={{ borderBottom: '2px solid var(--color-border)' }}>
-            <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '12px', fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase' }}>#</th>
-            <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '12px', fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase' }}>Title</th>
-            <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '12px', fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase' }}>Domain</th>
-            <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '12px', fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase' }}>Priority</th>
-            <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '12px', fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase' }}>Status</th>
+            <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '12px', fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', borderRight: '1px solid var(--color-border)' }}>#</th>
+            <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '12px', fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', borderRight: '1px solid var(--color-border)' }}>Title</th>
+            <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '12px', fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', borderRight: '1px solid var(--color-border)' }}>Domain</th>
+            <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '12px', fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', borderRight: '1px solid var(--color-border)' }}>Priority</th>
+            <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '12px', fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', borderRight: '1px solid var(--color-border)' }}>Status</th>
             <th style={{ padding: '14px 16px', textAlign: 'right', fontSize: '12px', fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', width: '140px' }}>Actions</th>
           </tr>
         </thead>
@@ -39,19 +39,19 @@ export default function TicketTable({ tickets, onDelete }) {
               onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-bg-hover)'}
               onMouseLeave={(e) => e.currentTarget.style.background = index % 2 === 0 ? 'transparent' : 'var(--color-bg-tertiary)'}
             >
-              <td style={{ padding: '14px 16px', fontFamily: 'monospace', fontWeight: 600, color: 'var(--color-text-tertiary)' }}>
+              <td style={{ padding: '14px 16px', fontFamily: 'monospace', fontWeight: 600, color: 'var(--color-text-tertiary)', borderRight: '1px solid var(--color-border)' }}>
                 #{ticket.id}
               </td>
-              <td style={{ padding: '14px 16px', fontWeight: 600, color: 'var(--color-text-primary)', maxWidth: '280px' }}>
+              <td style={{ padding: '14px 16px', fontWeight: 600, color: 'var(--color-text-primary)', maxWidth: '280px', borderRight: '1px solid var(--color-border)' }}>
                 <div className="line-clamp-1">{ticket.title}</div>
               </td>
-              <td style={{ padding: '14px 16px' }}>
+              <td style={{ padding: '14px 16px', borderRight: '1px solid var(--color-border)' }}>
                 <DomainBadge domain={ticket.domain} />
               </td>
-              <td style={{ padding: '14px 16px' }}>
+              <td style={{ padding: '14px 16px', borderRight: '1px solid var(--color-border)' }}>
                 <PriorityBadge priority={ticket.priority} />
               </td>
-              <td style={{ padding: '14px 16px' }}>
+              <td style={{ padding: '14px 16px', borderRight: '1px solid var(--color-border)' }}>
                 <StatusBadge status={ticket.status} />
               </td>
               <td style={{ padding: '14px 16px', textAlign: 'right' }}>
