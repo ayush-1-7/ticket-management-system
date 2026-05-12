@@ -67,6 +67,15 @@ export function TicketProvider({ children }) {
     }
   }
 
+  const getTicket = useCallback(async (id) => {
+    try {
+      const res = await ticketAPI.getById(id)
+      return res.data
+    } catch (err) {
+      throw err
+    }
+  }, [])
+
   const applyFilters = useCallback((newFilters) => {
     setFilters(newFilters)
     fetchTickets(newFilters)
@@ -82,6 +91,7 @@ export function TicketProvider({ children }) {
       filters,
       fetchTickets,
       fetchSummary,
+      getTicket,
       createTicket,
       updateTicket,
       deleteTicket,

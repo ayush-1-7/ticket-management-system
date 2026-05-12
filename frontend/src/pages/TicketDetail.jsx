@@ -114,7 +114,7 @@ export default function TicketDetail() {
           Dashboard
         </Link>
         <span className="text-slate-700">/</span>
-        <span className="text-slate-200">Ticket #{ticket.id.slice(0, 8)}</span>
+        <span className="text-slate-200">Ticket #{String(ticket.id).slice(0, 8)}</span>
       </nav>
 
       <div className="flex flex-col lg:flex-row gap-8">
@@ -160,7 +160,7 @@ export default function TicketDetail() {
               </div>
               <div className="space-y-1">
                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Ticket ID</p>
-                <p className="text-sm font-mono font-bold text-slate-400">#{ticket.id.slice(0, 8)}</p>
+                <p className="text-sm font-mono font-bold text-slate-400">#{String(ticket.id).slice(0, 8)}</p>
               </div>
               <div className="space-y-1">
                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Last Activity</p>

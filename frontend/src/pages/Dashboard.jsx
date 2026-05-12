@@ -67,7 +67,7 @@ function DashboardInner() {
   const handleReset = () => applyFilters(EMPTY_FILTERS)
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
@@ -104,7 +104,7 @@ function DashboardInner() {
       {/* Filter Bar & View Toggle */}
       <div className="space-y-4">
         <FilterBar filters={filters} onChange={applyFilters} onReset={handleReset} />
-        
+
         {!loading && !error && tickets.length > 0 && (
           <div className="flex items-center justify-between">
             <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">
@@ -138,11 +138,10 @@ function DashboardInner() {
                 <button
                   key={mode}
                   onClick={() => setViewMode(mode)}
-                  className={`p-2 rounded-lg transition-all duration-300 ${
-                    viewMode === mode 
-                      ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' 
+                  className={`p-2 rounded-lg transition-all duration-300 ${viewMode === mode
+                      ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20'
                       : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'
-                  }`}
+                    }`}
                 >
                   {icon}
                 </button>
@@ -167,7 +166,7 @@ function DashboardInner() {
             <EmptyState filtered={hasFilters} />
           </motion.div>
         ) : (
-          <motion.div 
+          <motion.div
             key={viewMode}
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -186,9 +185,9 @@ function DashboardInner() {
                 ))}
               </div>
             ) : (
-              <TicketTable 
-                tickets={tickets} 
-                onDelete={handleDeleteRequest} 
+              <TicketTable
+                tickets={tickets}
+                onDelete={handleDeleteRequest}
               />
             )}
           </motion.div>
