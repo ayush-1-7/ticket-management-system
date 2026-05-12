@@ -186,10 +186,18 @@ function TicketDetailInner() {
 
   const handleDeleteCancel = () => setDeleteOpen(false)
 
-  const formatIST = (dateStr) => {
+  const formatISTWithRelative = (dateStr) => {
     if (!dateStr) return '—'
-    const date = new Date(dateStr)
-    return new Intl.DateTimeFormat('en-IN', {
+    
+    // Robustly parse UTC from server (append Z if missing to avoid local time parsing)
+    let date = new Date(dateStr)
+    if (typeof dateStr === 'string' && !dateStr.includes('Z') && !dateStr.includes('+')) {
+      date = new Date(dateStr + 'Z')
+    }
+
+    if (isNaN(date.getTime())) return 'Invalid Date'
+
+    const fullTime = new Intl.DateTimeFormat('en-IN', {
       timeZone: 'Asia/Kolkata',
       day: 'numeric',
       month: 'long',
@@ -198,6 +206,21 @@ function TicketDetailInner() {
       minute: '2-digit',
       hour12: true,
     }).format(date) + ' IST'
+
+    // Relative time calculation
+    const now = new Date()
+    const diffMs = now - date
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMins / 60)
+    const diffDays = Math.floor(diffHours / 24)
+    
+    let relative = ''
+    if (diffMins < 1) relative = '(Just now)'
+    else if (diffMins < 60) relative = `(${diffMins}m ago)`
+    else if (diffHours < 24) relative = `(${diffHours}h ago)`
+    else relative = `(${diffDays}d ago)`
+
+    return `${fullTime} ${relative}`
   }
 
   if (loading) return <SkeletonDetail />
@@ -298,8 +321,8 @@ function TicketDetailInner() {
             {[
               { label: 'Ticket ID', value: `#${ticket.id}` },
               { label: 'Domain', value: ticket.domain },
-              { label: 'Created', value: formatIST(ticket.created_at) },
-              { label: 'Last Updated', value: ticket.updated_at ? formatIST(ticket.updated_at) : '—' },
+              { label: 'Created', value: formatISTWithRelative(ticket.created_at) },
+              { label: 'Last Updated', value: ticket.updated_at ? formatISTWithRelative(ticket.updated_at) : '—' },
             ].map(({ label, value }) => (
               <div
                 key={label}

@@ -7,7 +7,17 @@ const PRIORITY_ACCENTS = {
 }
 
 function formatIST(dateStr) {
-  const date = new Date(dateStr)
+  if (!dateStr) return { fullTime: '—', relative: '' }
+  
+  // Robustly parse UTC from server (append Z if missing to avoid local time parsing)
+  let date = new Date(dateStr)
+  if (typeof dateStr === 'string' && !dateStr.includes('Z') && !dateStr.includes('+')) {
+    date = new Date(dateStr + 'Z')
+  }
+
+  // Fallback check
+  if (isNaN(date.getTime())) return { fullTime: 'Invalid Date', relative: '' }
+
   const formatter = new Intl.DateTimeFormat('en-IN', {
     timeZone: 'Asia/Kolkata',
     day: '2-digit',
@@ -17,17 +27,8 @@ function formatIST(dateStr) {
     minute: '2-digit',
     hour12: true,
   })
-  const parts = formatter.formatToParts(date)
-  const day = parts.find(p => p.type === 'day').value
-  const month = parts.find(p => p.type === 'month').value
-  const year = parts.find(p => p.type === 'year').value
-  const hour = parts.find(p => p.type === 'hour').value
-  const minute = parts.find(p => p.type === 'minute').value
-  const dayPeriod = parts.find(p => p.type === 'dayPeriod')?.value || ''
-
-  const fullTime = `${day} ${month} ${year}, ${hour}:${minute} ${dayPeriod} IST`
-
-  // Relative time for tooltip
+  
+  const fullTime = formatter.format(date) + ' IST'
   const relative = getRelativeTime(date)
   
   return { fullTime, relative }
@@ -74,10 +75,10 @@ export default function TicketCard({ ticket, onDelete, index = 0 }) {
             <DomainBadge domain={ticket.domain} />
           </div>
           <span 
-            data-tooltip={fullTime}
+            data-tooltip={relative}
             style={{ fontSize: '11px', color: 'var(--color-text-tertiary)', cursor: 'help' }}
           >
-            {relative}
+            {fullTime}
           </span>
         </div>
 
