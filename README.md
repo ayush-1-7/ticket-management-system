@@ -39,46 +39,46 @@ Ticketing System/
 │   │   ├── database/db.py       # SQLAlchemy setup
 │   │   ├── models/ticket.py     # Ticket ORM model
 │   │   ├── schemas/ticket.py    # Pydantic schemas
-│   │   ├── services/ticket_service.py  # Business logic
-│   │   ├── routes/tickets.py    # API endpoints
+│   │   ├── services/ticket.py   # CRUD logic
+│   │   ├── routes/ticket.py     # API endpoints
 │   │   └── main.py              # FastAPI entry point
-│   ├── requirements.txt
-│   ├── Procfile
-│   └── render.yaml
+│   ├── requirements.txt         # Backend dependencies
+│   └── Procfile                 # Deployment file
 ├── frontend/
 │   ├── src/
 │   │   ├── components/          # Reusable UI components
-│   │   ├── context/             # React Context for state
-│   │   ├── pages/               # Dashboard, Create, Detail
-│   │   ├── services/api.js      # Axios API client
-│   │   ├── App.jsx              # Router + layout
-│   │   └── main.jsx             # Entry point
-│   ├── package.json
-│   ├── vite.config.js
-│   └── tailwind.config.js
-└── README.md
+│   │   ├── context/             # React Context (State)
+│   │   ├── pages/               # Main view pages
+│   │   ├── services/            # API client
+│   │   └── App.jsx              # Main routing
+│   ├── tailwind.config.js       # Styling theme
+│   └── package.json             # Frontend dependencies
+└── README.md                    # Documentation
 ```
 
 ---
 
-## 🚀 Local Development
+## 🚀 Getting Started
 
-### Backend
+### 1. Prerequisites
+
+- Python 3.10+
+- Node.js 18+
+- npm or yarn
+
+### 2. Backend Setup
 
 ```bash
 cd backend
 python -m venv venv
-venv\Scripts\activate        # Windows
-# source venv/bin/activate   # Linux/Mac
+source venv/bin/scripts/activate  # or venv\Scripts\activate on Windows
 pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
+uvicorn app.main:app --reload
 ```
 
-API will be available at **http://localhost:8000**
-- Swagger docs: http://localhost:8000/docs
-- Health check: http://localhost:8000/health
+Backend will run at `http://localhost:8000`.
 
-### Frontend
+### 3. Frontend Setup
 
 ```bash
 cd frontend
@@ -86,33 +86,20 @@ npm install
 npm run dev
 ```
 
-App will be available at **http://localhost:5173**
+Frontend will run at `http://localhost:5173`.
 
 ---
 
-## 📡 API Endpoints
+## 🏗 Key Components
 
-| Method   | Endpoint            | Description                |
-| -------- | ------------------- | -------------------------- |
-| `GET`    | `/`                 | API info                   |
-| `GET`    | `/health`           | Health check               |
-| `GET`    | `/tickets/summary`  | Dashboard analytics        |
-| `GET`    | `/tickets/`         | List all (with filters)    |
-| `GET`    | `/tickets/{id}`     | Get single ticket          |
-| `POST`   | `/tickets/`         | Create ticket              |
-| `PUT`    | `/tickets/{id}`     | Update ticket              |
-| `DELETE` | `/tickets/{id}`     | Delete ticket              |
-
-### Query Parameters (GET /tickets/)
-
-- `domain` — Engineering, DevOps, HR, IT, Finance
-- `priority` — Low, Medium, High, Critical
-- `status` — Open, In Progress, Closed
-- `search` — Full-text search on title
+- **TicketContext** — Centralized state management using React Context and Hooks.
+- **FilterBar** — Dynamic filtering logic that updates the dashboard in real-time.
+- **Badge System** — Semantic color tokens for priority and status visibility.
+- **Glassmorphism UI** — Modern, sleek design with subtle blurs and gradients.
 
 ---
 
-## 🚢 Deployment
+## 🌐 Deployment
 
 ### Backend → Render
 
