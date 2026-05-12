@@ -13,6 +13,71 @@ import { PriorityBadge, StatusBadge, DomainBadge } from '../components/Badge'
 
 const EMPTY_FILTERS = { domain: '', priority: '', status: '', search: '' }
 
+// Live Clock Component showing IST
+function LiveClock() {
+  const [time, setTime] = useState(new Date())
+
+  useEffect(() => {
+    const timer = setInterval(() => setTime(new Date()), 1000)
+    return () => clearInterval(timer)
+  }, [])
+
+  const options = {
+    timeZone: 'Asia/Kolkata',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true,
+  }
+
+  const formattedTime = new Intl.DateTimeFormat('en-IN', options).format(time)
+  const formattedDate = new Intl.DateTimeFormat('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  }).format(time)
+
+  return (
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'flex-end',
+      gap: '2px',
+      padding: '8px 16px',
+      background: 'var(--color-bg-tertiary)',
+      border: '1px solid var(--color-border)',
+      borderRadius: '12px',
+      minWidth: '140px'
+    }}>
+      <span style={{ 
+        fontSize: '11px', 
+        fontWeight: 700, 
+        color: 'var(--color-brand)',
+        textTransform: 'uppercase',
+        letterSpacing: '0.05em'
+      }}>
+        IST Time
+      </span>
+      <span style={{ 
+        fontSize: '18px', 
+        fontWeight: 800, 
+        color: 'var(--color-text-primary)',
+        fontFamily: 'monospace'
+      }}>
+        {formattedTime}
+      </span>
+      <span style={{ 
+        fontSize: '11px', 
+        color: 'var(--color-text-tertiary)',
+        fontWeight: 500
+      }}>
+        {formattedDate}
+      </span>
+    </div>
+  )
+}
+
 // List row component — no dynamic require, plain imports
 function ListRow({ ticket, onDeleteClick, onViewClick, index }) {
   const [hovered, setHovered] = useState(false)
@@ -191,33 +256,37 @@ function DashboardInner() {
             Track and manage issues across all organizational domains
           </p>
         </div>
-        <button
-          onClick={() => navigate('/create')}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '12px 22px',
-            fontSize: '14px',
-            fontWeight: 700,
-            borderRadius: '12px',
-            border: 'none',
-            background: 'linear-gradient(135deg,#3b82f6,#2563eb)',
-            color: 'white',
-            cursor: 'pointer',
-            boxShadow: '0 4px 14px rgba(59,130,246,0.4)',
-            transition: 'all var(--transition-fast)',
-            flexShrink: 0,
-          }}
-          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(59,130,246,0.5)' }}
-          onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 14px rgba(59,130,246,0.4)' }}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-          New Ticket
-        </button>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <LiveClock />
+          <button
+            onClick={() => navigate('/create')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '12px 22px',
+              fontSize: '14px',
+              fontWeight: 700,
+              borderRadius: '12px',
+              border: 'none',
+              background: 'linear-gradient(135deg,#3b82f6,#2563eb)',
+              color: 'white',
+              cursor: 'pointer',
+              boxShadow: '0 4px 14px rgba(59,130,246,0.4)',
+              transition: 'all var(--transition-fast)',
+              flexShrink: 0,
+            }}
+            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(59,130,246,0.5)' }}
+            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 14px rgba(59,130,246,0.4)' }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            New Ticket
+          </button>
+        </div>
       </div>
 
       {/* Summary Cards */}
