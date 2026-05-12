@@ -7,3 +7,5 @@ services:
     envVars:
       - key: DATABASE_URL
         value: sqlite:///./tickets.db
+      - key: PYTHON_VERSION
+        value: 3.11.9
