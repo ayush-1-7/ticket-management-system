@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+venv/
+.venv/
+env/
+.env
+
+# Build outputs
+dist/
+build/
+*.pyc
+__pycache__/
+
+# Databases
+*.db
+*.sqlite3
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temp/Logs
+*.log
+scratch/
+.gemini/
+.antigravity/
