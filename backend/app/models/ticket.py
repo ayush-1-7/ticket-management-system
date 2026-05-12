@@ -1,28 +1,6 @@
-from sqlalchemy import Column, Integer, String, DateTime, Enum as SAEnum
+from sqlalchemy import Column, Integer, String, Text, DateTime
 from sqlalchemy.sql import func
 from app.database.db import Base
-import enum
-
-
-class DomainEnum(str, enum.Enum):
-    Engineering = "Engineering"
-    DevOps = "DevOps"
-    HR = "HR"
-    IT = "IT"
-    Finance = "Finance"
-
-
-class PriorityEnum(str, enum.Enum):
-    Low = "Low"
-    Medium = "Medium"
-    High = "High"
-    Critical = "Critical"
-
-
-class StatusEnum(str, enum.Enum):
-    Open = "Open"
-    InProgress = "In Progress"
-    Closed = "Closed"
 
 
 class Ticket(Base):
@@ -30,8 +8,13 @@ class Ticket(Base):
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     title = Column(String(255), nullable=False)
-    description = Column(String(2000), nullable=False)
-    domain = Column(SAEnum(DomainEnum), nullable=False)
-    priority = Column(SAEnum(PriorityEnum), nullable=False)
-    status = Column(SAEnum(StatusEnum), nullable=False, default=StatusEnum.Open)
+    description = Column(Text, nullable=False)
+    domain = Column(String(50), nullable=False)
+    priority = Column(String(50), nullable=False)
+    status = Column(String(50), nullable=False, default="Open")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
