@@ -1,94 +1,96 @@
-import React from 'react'
-import { useNavigate } from 'react-router-dom'
-import { PriorityBadge, DomainBadge } from './Badge'
-import { useTickets } from '../context/TicketContext'
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { PriorityBadge, StatusBadge, DomainBadge } from './Badge';
 
-export default function TicketTable({ tickets, onRefresh }) {
-  const navigate = useNavigate()
-  const { deleteTicket, updateTicket } = useTickets()
-  const [deletingId, setDeletingId] = React.useState(null)
+export default function TicketTable({ tickets, onDelete }) {
+  const navigate = useNavigate();
 
-  const handleDelete = async (e, id) => {
-    e.stopPropagation()
-    if (!window.confirm('Are you sure you want to delete this ticket?')) return
-    setDeletingId(id)
-    try {
-      await deleteTicket(id)
-      if (onRefresh) onRefresh()
-    } catch (err) {
-      alert('Failed to delete ticket: ' + err.message)
-    } finally {
-      setDeletingId(null)
-    }
-  }
+  const handleView = (id) => {
+    navigate(`/tickets/${id}`);
+  };
 
-  const handleStatusChange = async (e, ticket) => {
-    e.stopPropagation()
-    try {
-      await updateTicket(ticket.id, { status: e.target.value })
-    } catch (err) {
-      alert('Failed to update status: ' + err.message)
-    }
-  }
-
-  const formatDate = (dateStr) => {
-    return new Date(dateStr).toLocaleDateString('en-US', {
-      year: 'numeric', month: 'short', day: 'numeric'
-    })
-  }
+  const handleDelete = (id) => {
+    // Relying on Dashboard's ConfirmDialog for a consistent UX
+    onDelete(id);
+  };
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-gray-50 border-b border-gray-200">
-            <tr>
-              {['ID', 'Title', 'Domain', 'Priority', 'Status', 'Created', 'Actions'].map(h => (
-                <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  {h}
-                </th>
-              ))}
+    <div className="card" style={{ overflowX: 'auto', padding: '0' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '800px' }}>
+        <thead>
+          <tr style={{ borderBottom: '2px solid var(--color-border)' }}>
+            <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '12px', fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase' }}>#</th>
+            <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '12px', fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase' }}>Title</th>
+            <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '12px', fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase' }}>Domain</th>
+            <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '12px', fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase' }}>Priority</th>
+            <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '12px', fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase' }}>Status</th>
+            <th style={{ padding: '14px 16px', textAlign: 'right', fontSize: '12px', fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', width: '140px' }}>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {tickets.map((ticket, index) => (
+            <tr
+              key={ticket.id}
+              style={{
+                borderBottom: '1px solid var(--color-border)',
+                background: index % 2 === 0 ? 'transparent' : 'var(--color-bg-tertiary)',
+                transition: 'background 0.2s',
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-bg-hover)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = index % 2 === 0 ? 'transparent' : 'var(--color-bg-tertiary)'}
+            >
+              <td style={{ padding: '14px 16px', fontFamily: 'monospace', fontWeight: 600, color: 'var(--color-text-tertiary)' }}>
+                #{ticket.id}
+              </td>
+              <td style={{ padding: '14px 16px', fontWeight: 600, color: 'var(--color-text-primary)', maxWidth: '280px' }}>
+                <div className="line-clamp-1">{ticket.title}</div>
+              </td>
+              <td style={{ padding: '14px 16px' }}>
+                <DomainBadge domain={ticket.domain} />
+              </td>
+              <td style={{ padding: '14px 16px' }}>
+                <PriorityBadge priority={ticket.priority} />
+              </td>
+              <td style={{ padding: '14px 16px' }}>
+                <StatusBadge status={ticket.status} />
+              </td>
+              <td style={{ padding: '14px 16px', textAlign: 'right' }}>
+                <button
+                  onClick={() => handleView(ticket.id)}
+                  style={{
+                    padding: '6px 14px',
+                    marginRight: '8px',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    borderRadius: '6px',
+                    background: 'var(--color-bg-tertiary)',
+                    border: '1px solid var(--color-border)',
+                    color: 'var(--color-text-secondary)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  View
+                </button>
+                <button
+                  onClick={() => handleDelete(ticket.id)}
+                  style={{
+                    padding: '6px 12px',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    borderRadius: '6px',
+                    background: 'rgba(239, 68, 68, 0.1)',
+                    border: '1px solid rgba(239, 68, 68, 0.4)',
+                    color: '#f87171',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Delete
+                </button>
+              </td>
             </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {tickets.map((ticket) => (
-              <tr
-                key={ticket.id}
-                onClick={() => navigate(`/tickets/${ticket.id}`)}
-                className="hover:bg-gray-50 cursor-pointer transition-colors"
-              >
-                <td className="px-4 py-3 text-sm text-gray-500">#{ticket.id}</td>
-                <td className="px-4 py-3">
-                  <p className="text-sm font-medium text-gray-900 truncate max-w-xs">{ticket.title}</p>
-                </td>
-                <td className="px-4 py-3"><DomainBadge domain={ticket.domain} /></td>
-                <td className="px-4 py-3"><PriorityBadge priority={ticket.priority} /></td>
-                <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
-                  <select
-                    value={ticket.status}
-                    onChange={e => handleStatusChange(e, ticket)}
-                    className="text-xs border border-gray-200 rounded px-2 py-1 bg-white focus:ring-1 focus:ring-blue-500 outline-none"
-                  >
-                    <option value="Open">Open</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="Closed">Closed</option>
-                  </select>
-                </td>
-                <td className="px-4 py-3 text-xs text-gray-500">{formatDate(ticket.created_at)}</td>
-                <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
-                  <button
-                    onClick={e => handleDelete(e, ticket.id)}
-                    disabled={deletingId === ticket.id}
-                    className="text-red-500 hover:text-red-700 text-xs font-medium disabled:opacity-50 transition-colors"
-                  >
-                    {deletingId === ticket.id ? 'Deleting...' : 'Delete'}
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+          ))}
+        </tbody>
+      </table>
     </div>
-  )
+  );
 }

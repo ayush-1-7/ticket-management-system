@@ -10,105 +10,11 @@ import EmptyState from '../components/EmptyState'
 import ConfirmDialog from '../components/ConfirmDialog'
 import { useToast } from '../components/Toast'
 import { PriorityBadge, StatusBadge, DomainBadge } from '../components/Badge'
+import TicketTable from '../components/TicketTable'
 
 const EMPTY_FILTERS = { domain: '', priority: '', status: '', search: '' }
 
 // List row component — no dynamic require, plain imports
-function ListRow({ ticket, onDeleteClick, onViewClick, index }) {
-  const [hovered, setHovered] = useState(false)
-  const PRIORITY_ACCENTS = {
-    Low: '#10b981', Medium: '#f59e0b', High: '#f97316', Critical: '#ef4444'
-  }
-  const accent = PRIORITY_ACCENTS[ticket.priority] || '#3b82f6'
-
-  return (
-    <div
-      className="card animate-slide-up"
-      style={{
-        padding: '14px 16px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-        animationDelay: `${index * 30}ms`,
-        cursor: 'default',
-        borderLeft: `3px solid ${hovered ? accent : 'var(--color-border)'}`,
-        transition: 'all var(--transition-base)',
-        transform: hovered ? 'translateX(4px)' : 'translateX(0)',
-        flexWrap: 'wrap',
-      }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
-      <span style={{
-        fontSize: '11px',
-        color: 'var(--color-text-tertiary)',
-        fontFamily: 'monospace',
-        width: '32px',
-        flexShrink: 0,
-      }}>
-        #{ticket.id}
-      </span>
-
-      <span style={{
-        fontSize: '13px',
-        fontWeight: 600,
-        color: 'var(--color-text-primary)',
-        flex: 1,
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        whiteSpace: 'nowrap',
-        minWidth: '120px',
-      }}>
-        {ticket.title}
-      </span>
-
-      <div style={{ display: 'flex', gap: '6px', flexShrink: 0, flexWrap: 'wrap' }}>
-        <DomainBadge domain={ticket.domain} />
-        <PriorityBadge priority={ticket.priority} />
-        <StatusBadge status={ticket.status} />
-      </div>
-
-      <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
-        <button
-          onClick={() => onViewClick(ticket.id)}
-          style={{
-            padding: '5px 12px',
-            fontSize: '12px',
-            fontWeight: 600,
-            borderRadius: '7px',
-            border: '1px solid var(--color-border)',
-            background: 'var(--color-bg-tertiary)',
-            color: 'var(--color-text-secondary)',
-            cursor: 'pointer',
-            transition: 'all var(--transition-fast)',
-          }}
-          onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-brand)'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = 'var(--color-brand)' }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'var(--color-bg-tertiary)'; e.currentTarget.style.color = 'var(--color-text-secondary)'; e.currentTarget.style.borderColor = 'var(--color-border)' }}
-        >
-          View
-        </button>
-        <button
-          onClick={() => onDeleteClick(ticket.id)}
-          style={{
-            padding: '5px 12px',
-            fontSize: '12px',
-            fontWeight: 600,
-            borderRadius: '7px',
-            border: '1px solid rgba(239,68,68,0.3)',
-            background: 'rgba(239,68,68,0.08)',
-            color: '#ef4444',
-            cursor: 'pointer',
-            transition: 'all var(--transition-fast)',
-          }}
-          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.18)' }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.08)' }}
-        >
-          Delete
-        </button>
-      </div>
-    </div>
-  )
-}
 
 // Inner component that uses toast (must be inside ToastProvider)
 function DashboardInner() {
@@ -323,19 +229,12 @@ function DashboardInner() {
         </div>
       )}
 
-      {/* Ticket List */}
+      {/* Ticket Table View */}
       {!loading && !error && tickets.length > 0 && viewMode === 'list' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {tickets.map((ticket, i) => (
-            <ListRow
-              key={ticket.id}
-              ticket={ticket}
-              index={i}
-              onDeleteClick={handleDeleteRequest}
-              onViewClick={(id) => navigate(`/tickets/${id}`)}
-            />
-          ))}
-        </div>
+        <TicketTable 
+          tickets={tickets} 
+          onDelete={handleDeleteRequest} 
+        />
       )}
 
       {/* Confirm Delete Dialog */}
