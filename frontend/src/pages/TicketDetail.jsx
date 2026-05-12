@@ -186,15 +186,18 @@ function TicketDetailInner() {
 
   const handleDeleteCancel = () => setDeleteOpen(false)
 
-  const formatDate = (d) => {
-    if (!d) return '—'
-    return new Date(d).toLocaleString('en-US', {
-      month: 'long',
+  const formatIST = (dateStr) => {
+    if (!dateStr) return '—'
+    const date = new Date(dateStr)
+    return new Intl.DateTimeFormat('en-IN', {
+      timeZone: 'Asia/Kolkata',
       day: 'numeric',
+      month: 'long',
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-    })
+      hour12: true,
+    }).format(date) + ' IST'
   }
 
   if (loading) return <SkeletonDetail />
@@ -295,8 +298,8 @@ function TicketDetailInner() {
             {[
               { label: 'Ticket ID', value: `#${ticket.id}` },
               { label: 'Domain', value: ticket.domain },
-              { label: 'Created', value: formatDate(ticket.created_at) },
-              { label: 'Last Updated', value: ticket.updated_at ? formatDate(ticket.updated_at) : '—' },
+              { label: 'Created', value: formatIST(ticket.created_at) },
+              { label: 'Last Updated', value: ticket.updated_at ? formatIST(ticket.updated_at) : '—' },
             ].map(({ label, value }) => (
               <div
                 key={label}

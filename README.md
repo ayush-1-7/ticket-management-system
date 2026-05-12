@@ -26,6 +26,7 @@ A production-ready, full-stack ticket management system with a **React 18 + Vite
 - **Responsive UI** — Works on mobile, tablet, and desktop
 - **Real-time Validation** — Client and server-side form validation
 - **Error Handling** — Graceful error states, loading spinners, empty states
+- **Time Display** — All timestamps are displayed in **Indian Standard Time (IST)** with detailed tooltips.
 - **Toast Notifications** — Success and error toasts for all actions
 
 ---
