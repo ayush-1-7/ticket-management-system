@@ -1,6 +1,7 @@
 import React from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { TicketProvider } from './context/TicketContext'
+import { ThemeProvider } from './context/ThemeContext'
 import { ToastProvider } from './components/Toast'
 import Navbar from './components/Navbar'
 import Dashboard from './pages/Dashboard'
@@ -9,8 +10,9 @@ import TicketDetail from './pages/TicketDetail'
 
 export default function App() {
   return (
-    <ToastProvider>
-      <TicketProvider>
+    <ThemeProvider>
+      <ToastProvider>
+        <TicketProvider>
         <BrowserRouter>
           <div className="min-h-screen bg-dark-900">
             <Navbar />
@@ -25,5 +27,6 @@ export default function App() {
         </BrowserRouter>
       </TicketProvider>
     </ToastProvider>
+  </ThemeProvider>
   )
 }

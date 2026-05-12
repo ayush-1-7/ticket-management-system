@@ -2,8 +2,17 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PriorityBadge, StatusBadge, DomainBadge } from './Badge'
 
+function parseUTC(dateStr) {
+  if (!dateStr) return new Date()
+  let str = dateStr.toString()
+  if (!str.endsWith('Z') && !str.includes('+') && !str.includes('-')) {
+    str += 'Z'   // Force UTC if no timezone is present
+  }
+  return new Date(str)
+}
+
 function formatIST(dateStr) {
-  const date = new Date(dateStr)
+  const date = parseUTC(dateStr)
   
   const full = new Intl.DateTimeFormat('en-IN', {
     timeZone: 'Asia/Kolkata',
