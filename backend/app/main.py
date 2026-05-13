@@ -3,14 +3,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from contextlib import asynccontextmanager
-from app.database.db import connect_db, close_db
+from app.database.db import connect_db, close_db, check_db_health
 from app.routes import tickets
 import time
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await connect_db()
+    try:
+        await connect_db()
+    except Exception as e:
+        print(f"Failed to connect to database on startup: {e}")
     yield
     await close_db()
 
@@ -64,14 +67,19 @@ app.include_router(tickets.router)
 
 @app.api_route("/", methods=["GET", "HEAD"], tags=["Health"])
 async def root():
+    db_status = "connected" if await check_db_health() else "disconnected"
     return {
         "service": "TicketFlow API",
         "version": "3.0.0",
-        "database": "MongoDB Atlas",
+        "database": f"MongoDB Atlas ({db_status})",
         "status": "operational",
     }
 
 
 @app.get("/health", tags=["Health"])
 async def health():
-    return {"status": "healthy", "database": "MongoDB Atlas"}
+    is_connected = await check_db_health()
+    return {
+        "status": "healthy" if is_connected else "degraded",
+        "database": "connected" if is_connected else "disconnected"
+    }
