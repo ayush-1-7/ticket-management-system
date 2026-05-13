@@ -7,9 +7,8 @@ load_dotenv()
 MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
 DB_NAME = os.getenv("DB_NAME", "ticketflow")
 
-# Fix Render's postgres:// prefix issue (not needed for Mongo but safe)
-if MONGODB_URL.startswith("mongo+srv"):
-    MONGODB_URL = "mongodb" + MONGODB_URL[5:]
+# Remove the buggy prefix check that was corrupting the URL
+# (It was turning mongodb+srv into mongodbdb+srv)
 
 client: AsyncIOMotorClient = None
 database = None
@@ -19,8 +18,11 @@ async def connect_db():
     global client, database
     try:
         print(f"[DB] Connecting to MongoDB... DB: {DB_NAME}")
+        # Clean the URL just in case of whitespace
+        url = MONGODB_URL.strip()
+        
         client = AsyncIOMotorClient(
-            MONGODB_URL,
+            url,
             serverSelectionTimeoutMS=10000,
             connectTimeoutMS=10000,
             socketTimeoutMS=20000,
@@ -37,7 +39,8 @@ async def connect_db():
         print(f"[DB] ✅ Connected to MongoDB Atlas — database: {DB_NAME}")
     except Exception as e:
         print(f"[DB] ❌ MongoDB connection failed: {e}")
-        raise e
+        # We don't raise here to allow the server to start (lifespan handles it)
+        database = None
 
 
 async def close_db():
@@ -50,14 +53,14 @@ async def close_db():
 def get_database():
     global database
     if database is None:
-        raise Exception("Database not initialized")
+        raise Exception("Database not initialized. Check your MONGODB_URL environment variable.")
     return database
 
 
 async def check_db_health() -> bool:
-    global client
+    global client, database
     try:
-        if client is None:
+        if client is None or database is None:
             return False
         await client.admin.command("ping")
         return True
