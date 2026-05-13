@@ -1,6 +1,7 @@
 import os
 from motor.motor_asyncio import AsyncIOMotorClient
 from dotenv import load_dotenv
+import certifi
 
 load_dotenv()
 
@@ -32,6 +33,7 @@ async def connect_db():
             retryReads=True,
             tls=True,
             tlsAllowInvalidCertificates=False,
+            tlsCAFile=certifi.where()
         )
         # Verify connection works
         await client.admin.command("ping")
