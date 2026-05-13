@@ -1,99 +1,128 @@
-from sqlalchemy.orm import Session
-from app.models.ticket import Ticket
-from app.schemas.ticket import TicketCreate, TicketUpdate
+from motor.motor_asyncio import AsyncIOMotorDatabase
+from datetime import datetime, timezone
 from fastapi import HTTPException
 from typing import Optional, List
+from app.schemas.ticket import TicketCreate, TicketUpdate
 
 DOMAINS = ["Engineering", "DevOps", "HR", "IT", "Finance"]
 PRIORITIES = ["Low", "Medium", "High", "Critical"]
 STATUSES = ["Open", "In Progress", "Closed"]
 
+COLLECTION = "tickets"
 
-def create_ticket(db: Session, data: TicketCreate) -> Ticket:
-    ticket = Ticket(
-        title=data.title,
-        description=data.description,
-        domain=data.domain,
-        priority=data.priority,
-        status=data.status or "Open",
+
+async def get_next_id(db: AsyncIOMotorDatabase) -> int:
+    result = await db["counters"].find_one_and_update(
+        {"_id": "ticket_id"},
+        {"$inc": {"seq": 1}},
+        upsert=True,
+        return_document=True,
     )
-    db.add(ticket)
-    db.commit()
-    db.refresh(ticket)
-    return ticket
+    return result["seq"]
 
 
-def get_all_tickets(
-    db: Session,
+def ticket_from_doc(doc: dict) -> dict:
+    if doc is None:
+        return None
+    return {
+        "id": doc["id"],
+        "title": doc["title"],
+        "description": doc["description"],
+        "domain": doc["domain"],
+        "priority": doc["priority"],
+        "status": doc["status"],
+        "created_at": doc.get("created_at"),
+        "updated_at": doc.get("updated_at"),
+    }
+
+
+async def create_ticket(db: AsyncIOMotorDatabase, data: TicketCreate) -> dict:
+    ticket_id = await get_next_id(db)
+    now = datetime.now(timezone.utc)
+    doc = {
+        "id": ticket_id,
+        "title": data.title,
+        "description": data.description,
+        "domain": data.domain,
+        "priority": data.priority,
+        "status": data.status or "Open",
+        "created_at": now,
+        "updated_at": now,
+    }
+    await db[COLLECTION].insert_one(doc)
+    return ticket_from_doc(doc)
+
+
+async def get_all_tickets(
+    db: AsyncIOMotorDatabase,
     domain: Optional[str] = None,
     priority: Optional[str] = None,
     status: Optional[str] = None,
     search: Optional[str] = None,
-) -> List[Ticket]:
-    query = db.query(Ticket)
+) -> List[dict]:
+    query = {}
     if domain:
-        query = query.filter(Ticket.domain == domain)
+        query["domain"] = domain
     if priority:
-        query = query.filter(Ticket.priority == priority)
+        query["priority"] = priority
     if status:
-        query = query.filter(Ticket.status == status)
+        query["status"] = status
     if search:
-        search_term = f"%{search}%"
-        query = query.filter(
-            Ticket.title.ilike(search_term) | Ticket.description.ilike(search_term)
-        )
-    return query.order_by(Ticket.created_at.desc()).all()
+        query["$or"] = [
+            {"title": {"$regex": search, "$options": "i"}},
+            {"description": {"$regex": search, "$options": "i"}},
+        ]
+
+    cursor = db[COLLECTION].find(query).sort("created_at", -1)
+    tickets = []
+    async for doc in cursor:
+        tickets.append(ticket_from_doc(doc))
+    return tickets
 
 
-def get_ticket_by_id(db: Session, ticket_id: int) -> Ticket:
-    ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
-    if not ticket:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Ticket #{ticket_id} not found",
-        )
-    return ticket
+async def get_ticket_by_id(db: AsyncIOMotorDatabase, ticket_id: int) -> dict:
+    doc = await db[COLLECTION].find_one({"id": ticket_id})
+    if not doc:
+        raise HTTPException(status_code=404, detail=f"Ticket #{ticket_id} not found")
+    return ticket_from_doc(doc)
 
 
-def update_ticket(db: Session, ticket_id: int, data: TicketUpdate) -> Ticket:
-    ticket = get_ticket_by_id(db, ticket_id)
+async def update_ticket(
+    db: AsyncIOMotorDatabase, ticket_id: int, data: TicketUpdate
+) -> dict:
+    await get_ticket_by_id(db, ticket_id)
     updates = data.model_dump(exclude_unset=True)
     if not updates:
         raise HTTPException(status_code=400, detail="No update fields provided")
-    for key, value in updates.items():
-        setattr(ticket, key, value)
-    db.commit()
-    db.refresh(ticket)
-    return ticket
+    updates["updated_at"] = datetime.now(timezone.utc)
+    await db[COLLECTION].update_one({"id": ticket_id}, {"$set": updates})
+    updated = await db[COLLECTION].find_one({"id": ticket_id})
+    return ticket_from_doc(updated)
 
 
-def delete_ticket(db: Session, ticket_id: int) -> dict:
-    ticket = get_ticket_by_id(db, ticket_id)
-    db.delete(ticket)
-    db.commit()
+async def delete_ticket(db: AsyncIOMotorDatabase, ticket_id: int) -> dict:
+    await get_ticket_by_id(db, ticket_id)
+    await db[COLLECTION].delete_one({"id": ticket_id})
     return {"success": True, "message": f"Ticket #{ticket_id} deleted successfully"}
 
 
-def get_summary(db: Session) -> dict:
-    total = db.query(Ticket).count()
+async def get_summary(db: AsyncIOMotorDatabase) -> dict:
+    total = await db[COLLECTION].count_documents({})
 
-    per_domain = {
-        d: db.query(Ticket).filter(Ticket.domain == d).count()
-        for d in DOMAINS
-    }
-    per_status = {
-        s: db.query(Ticket).filter(Ticket.status == s).count()
-        for s in STATUSES
-    }
-    per_priority = {
-        p: db.query(Ticket).filter(Ticket.priority == p).count()
-        for p in PRIORITIES
-    }
+    per_domain = {}
+    for d in DOMAINS:
+        per_domain[d] = await db[COLLECTION].count_documents({"domain": d})
 
-    high_priority_count = (
-        db.query(Ticket)
-        .filter(Ticket.priority.in_(["High", "Critical"]))
-        .count()
+    per_status = {}
+    for s in STATUSES:
+        per_status[s] = await db[COLLECTION].count_documents({"status": s})
+
+    per_priority = {}
+    for p in PRIORITIES:
+        per_priority[p] = await db[COLLECTION].count_documents({"priority": p})
+
+    high_priority_count = await db[COLLECTION].count_documents(
+        {"priority": {"$in": ["High", "Critical"]}}
     )
 
     return {

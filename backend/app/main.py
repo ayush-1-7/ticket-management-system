@@ -2,22 +2,26 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
-from app.database.db import engine, Base
+from contextlib import asynccontextmanager
+from app.database.db import connect_db, close_db
 from app.routes import tickets
 import time
 
-# Create all tables on startup
-Base.metadata.create_all(bind=engine)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await connect_db()
+    yield
+    await close_db()
+
 
 app = FastAPI(
-    title="Multi-Domain Ticket Management System",
-    description="A production-ready internal ticketing tool",
-    version="2.0.0",
-    docs_url="/docs",
-    redoc_url="/redoc",
+    title="TicketFlow API",
+    description="Multi-Domain Ticket Management System — MongoDB Edition",
+    version="3.0.0",
+    lifespan=lifespan,
 )
 
-# CORS — allow all origins for deployment
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -26,7 +30,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Process time header
+
 @app.middleware("http")
 async def add_process_time(request: Request, call_next):
     start = time.time()
@@ -34,7 +38,7 @@ async def add_process_time(request: Request, call_next):
     response.headers["X-Process-Time"] = str(round(time.time() - start, 4))
     return response
 
-# Validation error handler
+
 @app.exception_handler(RequestValidationError)
 async def validation_handler(request: Request, exc: RequestValidationError):
     errors = []
@@ -46,7 +50,7 @@ async def validation_handler(request: Request, exc: RequestValidationError):
         content={"detail": "Validation failed", "errors": errors},
     )
 
-# Global error handler
+
 @app.exception_handler(Exception)
 async def global_handler(request: Request, exc: Exception):
     return JSONResponse(
@@ -54,18 +58,20 @@ async def global_handler(request: Request, exc: Exception):
         content={"detail": "Internal server error", "message": str(exc)},
     )
 
-# Include routes
+
 app.include_router(tickets.router)
 
-@app.get("/", tags=["Health"])
-def root():
+
+@app.api_route("/", methods=["GET", "HEAD"], tags=["Health"])
+async def root():
     return {
         "service": "TicketFlow API",
-        "version": "2.0.0",
+        "version": "3.0.0",
+        "database": "MongoDB Atlas",
         "status": "operational",
-        "docs": "/docs",
     }
 
+
 @app.get("/health", tags=["Health"])
-def health():
-    return {"status": "healthy"}
+async def health():
+    return {"status": "healthy", "database": "MongoDB Atlas"}

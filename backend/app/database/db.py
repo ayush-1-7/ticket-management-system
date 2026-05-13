@@ -1,26 +1,29 @@
 import os
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from motor.motor_asyncio import AsyncIOMotorClient
+from dotenv import load_dotenv
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./tickets.db")
+load_dotenv()
 
-# SQLite needs check_same_thread=False
-connect_args = {}
-if DATABASE_URL.startswith("sqlite"):
-    connect_args = {"check_same_thread": False}
+MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
+DB_NAME = os.getenv("DB_NAME", "ticketflow")
 
-engine = create_engine(
-    DATABASE_URL,
-    connect_args=connect_args,
-)
+client: AsyncIOMotorClient = None
+database = None
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+async def connect_db():
+    global client, database
+    client = AsyncIOMotorClient(MONGODB_URL)
+    database = client[DB_NAME]
+    print(f"[DB] Connected to MongoDB: {DB_NAME}")
+
+
+async def close_db():
+    global client
+    if client:
+        client.close()
+        print("[DB] MongoDB connection closed")
+
+
+def get_database():
+    return database
