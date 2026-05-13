@@ -107,30 +107,49 @@ async def delete_ticket(db: AsyncIOMotorDatabase, ticket_id: int) -> dict:
 
 
 async def get_summary(db: AsyncIOMotorDatabase) -> dict:
-    total = await db[COLLECTION].count_documents({})
+    pipeline = [
+        {
+            "$facet": {
+                "total": [{"$count": "count"}],
+                "domains": [{"$group": {"_id": "$domain", "count": {"$sum": 1}}}],
+                "statuses": [{"$group": {"_id": "$status", "count": {"$sum": 1}}}],
+                "priorities": [{"$group": {"_id": "$priority", "count": {"$sum": 1}}}],
+                "high_priority": [
+                    {"$match": {"priority": {"$in": ["High", "Critical"]}}},
+                    {"$count": "count"},
+                ],
+            }
+        }
+    ]
 
-    per_domain = {}
-    for d in DOMAINS:
-        per_domain[d] = await db[COLLECTION].count_documents({"domain": d})
+    results = await db[COLLECTION].aggregate(pipeline).to_list(length=1)
+    data = results[0] if results else {}
 
-    per_status = {}
-    for s in STATUSES:
-        per_status[s] = await db[COLLECTION].count_documents({"status": s})
+    # Format into the schema expected by frontend
+    per_domain = {d: 0 for d in DOMAINS}
+    for item in data.get("domains", []):
+        if item["_id"] in per_domain:
+            per_domain[item["_id"]] = item["count"]
 
-    per_priority = {}
-    for p in PRIORITIES:
-        per_priority[p] = await db[COLLECTION].count_documents({"priority": p})
+    per_status = {s: 0 for s in STATUSES}
+    for item in data.get("statuses", []):
+        if item["_id"] in per_status:
+            per_status[item["_id"]] = item["count"]
 
-    high_priority_count = await db[COLLECTION].count_documents(
-        {"priority": {"$in": ["High", "Critical"]}}
-    )
+    per_priority = {p: 0 for p in PRIORITIES}
+    for item in data.get("priorities", []):
+        if item["_id"] in per_priority:
+            per_priority[item["_id"]] = item["count"]
+
+    total = data["total"][0]["count"] if data.get("total") else 0
+    high_priority = data["high_priority"][0]["count"] if data.get("high_priority") else 0
 
     return {
         "total_tickets": total,
         "tickets_per_domain": per_domain,
         "tickets_per_status": per_status,
         "tickets_per_priority": per_priority,
-        "high_priority_count": high_priority_count,
+        "high_priority_count": high_priority,
         "open_count": per_status.get("Open", 0),
         "closed_count": per_status.get("Closed", 0),
         "in_progress_count": per_status.get("In Progress", 0),

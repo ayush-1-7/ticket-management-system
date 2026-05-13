@@ -8,35 +8,43 @@ const api = axios.create({
   timeout: 60000, // 60 seconds — handles Render cold start
 })
 
-// Retry helper
-async function withRetry(fn, retries = 3, delayMs = 3000) {
+// Retry helper with exponential backoff and jitter
+async function withRetry(fn, retries = 5, delayMs = 2000) {
   for (let i = 1; i <= retries; i++) {
     try {
       return await fn()
     } catch (err) {
       const isTimeout = err.code === 'ECONNABORTED' || err.message?.includes('timeout')
-      const isNetwork = !err.response || err.response?.status >= 500
+      const isNetwork = !err.response || [502, 503, 504].includes(err.response?.status)
       const isLast = i === retries
 
       if (isLast || (!isTimeout && !isNetwork)) throw err
 
-      console.warn(`[API] Attempt ${i} failed. Retrying in ${delayMs * i}ms...`)
-      await new Promise(r => setTimeout(r, delayMs * i))
+      // Increase delay progressively: 2s, 4s, 8s, 16s...
+      const currentDelay = delayMs * Math.pow(2, i - 1)
+      console.warn(`[API] Attempt ${i} failed (${err.message}). Retrying in ${currentDelay}ms...`)
+      await new Promise(r => setTimeout(r, currentDelay))
     }
   }
 }
 
 api.interceptors.response.use(
-  res => res,
+  res => {
+    const processTime = res.headers['x-process-time']
+    if (processTime) {
+      console.log(`[API] ${res.config.url} took ${processTime}s (backend)`)
+    }
+    return res
+  },
   error => {
     let message = 'An unexpected error occurred'
 
     if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
-      message = 'Request timed out. Backend is waking up — please try again in 30 seconds.'
+      message = 'Backend is waking up (Cold Start). Please wait a few seconds...'
     } else if (!error.response) {
-      message = 'Cannot reach server. Please check your connection and try again.'
-    } else if (error.response.status === 503) {
-      message = 'Server is starting up. Please wait and try again.'
+      message = 'Cannot reach server. It might be spinning up — please wait.'
+    } else if ([502, 503, 504].includes(error.response?.status)) {
+      message = 'Gateway is waking up the backend. Hang tight...'
     } else if (error.response.status === 404) {
       message = error.response.data?.detail || 'Resource not found.'
     } else if (error.response?.data?.errors) {

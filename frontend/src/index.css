@@ -58,9 +58,23 @@
     @apply bg-clip-text text-transparent bg-gradient-to-br from-white via-white to-white/50;
   }
 
+  @layer utilities {
   .text-gradient-primary {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400;
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-violet-400 to-fuchsia-400;
   }
+  .bg-glass {
+    @apply bg-white/[0.03] backdrop-blur-xl border border-white/[0.08];
+  }
+  .shadow-glow-sm {
+    @apply shadow-[0_0_15px_rgba(99,102,241,0.2)];
+  }
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
 
   .btn-premium {
     @apply relative px-6 py-2.5 rounded-xl font-bold transition-all duration-300 

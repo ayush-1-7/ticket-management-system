@@ -9,7 +9,7 @@ const PRIORITIES = ['Low', 'Medium', 'High', 'Critical']
 
 const PRIORITY_INFO = {
   Low: { color: 'text-emerald-400', desc: 'Minor issue, no urgency' },
-  Medium: { color: 'text-amber-400', desc: 'Should be resolved soon' },
+  Medium: { color: 'text-amber-400', desc: 'Should be addressed soon' },
   High: { color: 'text-orange-400', desc: 'Needs prompt attention' },
   Critical: { color: 'text-red-400', desc: 'Immediate action required' },
 }

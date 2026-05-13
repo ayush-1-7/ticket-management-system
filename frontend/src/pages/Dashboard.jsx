@@ -22,6 +22,7 @@ function DashboardInner() {
     summary,
     loading,
     summaryLoading,
+    isInitializing,
     error,
     filters,
     applyFilters,
@@ -33,10 +34,18 @@ function DashboardInner() {
   const [deleteId, setDeleteId] = useState(null)
   const [viewMode, setViewMode] = useState('grid')
   const [isDeleting, setIsDeleting] = useState(false)
+  const [showWakeupMessage, setShowWakeupMessage] = useState(false)
 
   useEffect(() => {
     fetchTickets()
     fetchSummary()
+
+    // Show wakeup message if still loading after 3 seconds
+    const timer = setTimeout(() => {
+      if (isInitializing) setShowWakeupMessage(true)
+    }, 3000)
+
+    return () => clearTimeout(timer)
   }, [])
 
   const hasFilters = !!(filters.domain || filters.priority || filters.status || filters.search)
@@ -154,7 +163,22 @@ function DashboardInner() {
       {/* Content States */}
       <AnimatePresence mode="wait">
         {loading ? (
-          <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6">
+            {showWakeupMessage && (
+              <motion.div 
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-indigo-500/10 border border-indigo-500/20 rounded-2xl p-4 flex items-center gap-4"
+              >
+                <div className="w-10 h-10 rounded-xl bg-indigo-500/20 flex items-center justify-center">
+                  <div className="w-5 h-5 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
+                </div>
+                <div>
+                  <p className="text-white font-bold text-sm">Backend is waking up...</p>
+                  <p className="text-indigo-300/70 text-xs font-medium">Render free tier services sleep after inactivity. This usually takes 30-60 seconds.</p>
+                </div>
+              </motion.div>
+            )}
             <DashboardSkeleton />
           </motion.div>
         ) : error ? (

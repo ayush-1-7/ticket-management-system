@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useTickets } from '../context/TicketContext'
 import { useToast } from '../components/Toast'
 
-const STATUS_STEPS = ['Open', 'In Progress', 'Resolved', 'Closed']
+const STATUS_STEPS = ['Open', 'In Progress', 'Closed']
 const DOMAINS = ['Engineering', 'DevOps', 'HR', 'IT', 'Finance']
 const PRIORITIES = ['Low', 'Medium', 'High', 'Critical']
 

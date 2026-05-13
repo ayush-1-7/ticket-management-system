@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { TicketProvider } from './context/TicketContext'
 import { ThemeProvider } from './context/ThemeContext'
@@ -8,8 +8,15 @@ import Dashboard from './pages/Dashboard'
 import CreateTicket from './pages/CreateTicket'
 import TicketDetail from './pages/TicketDetail'
 import ParticleBackground from './components/ui/ParticleBackground'
+import { ticketAPI } from './services/api'
 
 export default function App() {
+  useEffect(() => {
+    // Wake up the backend on load
+    ticketAPI.healthCheck().catch(() => {
+      console.log('[App] Backend wakeup initiated...')
+    })
+  }, [])
   return (
     <ThemeProvider>
       <ToastProvider>

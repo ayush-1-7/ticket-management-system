@@ -8,6 +8,7 @@ export function TicketProvider({ children }) {
   const [summary, setSummary] = useState(null)
   const [loading, setLoading] = useState(false)
   const [summaryLoading, setSummaryLoading] = useState(false)
+  const [isInitializing, setIsInitializing] = useState(true)
   const [error, setError] = useState(null)
   const [filters, setFilters] = useState({
     domain: '', priority: '', status: '', search: ''
@@ -23,6 +24,7 @@ export function TicketProvider({ children }) {
       setError(err.message)
     } finally {
       setLoading(false)
+      setIsInitializing(false)
     }
   }, [filters])
 
@@ -35,6 +37,7 @@ export function TicketProvider({ children }) {
       // non-critical
     } finally {
       setSummaryLoading(false)
+      setIsInitializing(false)
     }
   }, [])
 
@@ -87,6 +90,7 @@ export function TicketProvider({ children }) {
       summary,
       loading,
       summaryLoading,
+      isInitializing,
       error,
       filters,
       fetchTickets,
