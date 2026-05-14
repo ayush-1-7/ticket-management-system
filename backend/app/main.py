@@ -75,11 +75,15 @@ async def root():
         "status": "operational",
     }
 
+START_TIME = time.time()
 
 @app.get("/health", tags=["Health"])
 async def health():
     is_connected = await check_db_health()
     return {
         "status": "healthy" if is_connected else "degraded",
-        "database": "connected" if is_connected else "disconnected"
+        "database": "connected" if is_connected else "disconnected",
+        "uptime": f"{round(time.time() - START_TIME, 2)}s",
+        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "service": "TicketFlow API (MongoDB Edition)"
     }
